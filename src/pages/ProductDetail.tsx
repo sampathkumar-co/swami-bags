@@ -10,9 +10,13 @@ export default function ProductDetail() {
   const { products, config, loading } = useCatalog()
   const product = products.find((item) => item.slug === slug)
   const [quantity, setQuantity] = useState(1)
+  const [selectedImage, setSelectedImage] = useState('')
 
   useEffect(() => {
-    if (product) setQuantity(product.moq)
+    if (product) {
+      setQuantity(product.moq)
+      setSelectedImage(product.image || product.images[0] || '')
+    }
   }, [product])
 
   const enquiryHref = useMemo(() => {
@@ -46,7 +50,7 @@ export default function ProductDetail() {
 
   const quantityStep = Math.max(1, Math.round(product.moq / 5))
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 3)
-  const gallery = product.images.length ? product.images : product.image ? [product.image] : []
+  const gallery = Array.from(new Set([product.image, ...product.images].filter(Boolean)))
 
   return (
     <>
@@ -56,12 +60,18 @@ export default function ProductDetail() {
           <div className="product-detail-grid">
             <div className="detail-gallery">
               <div className="detail-main-image">
-                {product.image ? <img src={product.image} alt={product.name} /> : <div className="product-placeholder">Image coming soon</div>}
+                {selectedImage ? <img src={selectedImage} alt={product.name} /> : <div className="product-placeholder">Image coming soon</div>}
               </div>
               {gallery.length > 1 && (
                 <div className="detail-thumbs">
-                  {gallery.slice(0, 4).map((image, index) => (
-                    <button key={image + index} aria-label={`Product view ${index + 1}`}>
+                  {gallery.slice(0, 5).map((image, index) => (
+                    <button
+                      key={image}
+                      className={selectedImage === image ? 'active' : ''}
+                      aria-label={`Product view ${index + 1}`}
+                      aria-pressed={selectedImage === image}
+                      onClick={() => setSelectedImage(image)}
+                    >
                       <img src={image} alt="" />
                     </button>
                   ))}
