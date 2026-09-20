@@ -73,8 +73,10 @@ jobs:
 
       - name: Wait for public web and admin API
         run: |
-          for attempt in {1..30}; do
-            if curl -fsS http://127.0.0.1:8088/healthz >/dev/null               && curl -fsS http://127.0.0.1:8088/api/admin/auth/csrf >/dev/null               && curl -fsS http://127.0.0.1:8088/catalog/products.json >/dev/null; then
+          for attempt in {1..40}; do
+            if curl -fsS http://127.0.0.1:8088/healthz >/dev/null \
+              && curl -fsS http://127.0.0.1:8088/api/admin/auth/csrf >/dev/null \
+              && curl -fsS http://127.0.0.1:8088/catalog/products.json >/dev/null; then
               exit 0
             fi
             sleep 2
@@ -87,6 +89,113 @@ jobs:
         run: |
           code="$(curl -sS -o /tmp/admin-response.json -w '%{http_code}' http://127.0.0.1:8088/api/admin/dashboard)"
           test "$code" = "401"
+
+      - name: Exercise authenticated product publish flow
+        run: |
+          set -euo pipefail
+          base="http://127.0.0.1:8088"
+          cookies="/tmp/swami-cookies.txt"
+
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "username=admin" \
+            --data-urlencode "password=replace-with-a-long-random-password" \
+            "$base/api/admin/auth/login" > /tmp/login.json
+
+          grep -q '"authenticated":true' /tmp/login.json
+
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+
+          cat > /tmp/product.json <<'JSON'
+          {
+            "id": "SB-CI-01",
+            "name": "CI Smoke Bag",
+            "category": "Jute Bags",
+            "material": "Natural jute",
+            "price": 99,
+            "priceUnit": "piece",
+            "moq": 50,
+            "stock": 120,
+            "restockDays": null,
+            "size": "15 x 14 x 5 in",
+            "description": "Production runtime smoke-test product.",
+            "features": ["Strong handles", "Custom printing"]
+          }
+          JSON
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/product.json \
+            "$base/api/admin/products" > /tmp/created.json
+
+          grep -q '"id":"SB-CI-01"' /tmp/created.json
+
+          code="$(curl -sS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/json" \
+            --data '{"published":true}' \
+            -o /tmp/publish-before-image.json -w '%{http_code}' \
+            "$base/api/admin/products/SB-CI-01/publish")"
+          test "$code" = "400"
+
+          printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
+            | base64 --decode > /tmp/bag.png
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -F "files=@/tmp/bag.png;type=image/png" \
+            "$base/api/admin/products/SB-CI-01/images" > /tmp/upload.json
+
+          grep -q '"kind":"ORIGINAL"' /tmp/upload.json
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/json" \
+            --data '{"published":true}' \
+            "$base/api/admin/products/SB-CI-01/publish" > /tmp/published.json
+
+          grep -q '"published":true' /tmp/published.json
+
+          curl -fsS "$base/catalog/products.json" > /tmp/catalog.json
+          grep -q '"CI Smoke Bag"' /tmp/catalog.json
+
+          image_path="$(python3 -c 'import json; d=json.load(open("/tmp/catalog.json")); print(next(p["image"] for p in d["products"] if p["id"]=="SB-CI-01"))')"
+          test -n "$image_path"
+          curl -fsS "$base$image_path" -o /tmp/public-bag.png
+          test -s /tmp/public-bag.png
+
+      - name: Verify settings API and public config export
+        run: |
+          set -euo pipefail
+          base="http://127.0.0.1:8088"
+          cookies="/tmp/swami-cookies.txt"
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/json" \
+            -X PUT \
+            --data '{
+              "brandName":"Swami Bags CI",
+              "whatsappNumber":"919876543210",
+              "businessPhone":"+91 98765 43210",
+              "businessEmail":"sales@example.com",
+              "businessAddress":"CI test address",
+              "publicBaseUrl":"https://example.com"
+            }' \
+            "$base/api/admin/settings" > /tmp/settings.json
+
+          grep -q '"brandName":"Swami Bags CI"' /tmp/settings.json
+          curl -fsS "$base/catalog/config.json" > /tmp/public-config.json
+          grep -q '"brandName":"Swami Bags CI"' /tmp/public-config.json
+          grep -q '"whatsappNumber":"919876543210"' /tmp/public-config.json
 
       - name: Show container state
         run: docker compose ps
