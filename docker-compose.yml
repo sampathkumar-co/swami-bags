@@ -64,5 +64,17 @@ services:
       - no-new-privileges:true
     logging: *default-logging
 
+  ops:
+    image: alpine:3.24.2
+    profiles: ["ops"]
+    volumes:
+      - swami-data:/data
+      - ./backups:/backup
+    pids_limit: 64
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   swami-data:
