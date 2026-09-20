@@ -68,6 +68,7 @@ jobs:
           chmod 600 .env
           sed -i 's/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=ci-test-password-12345/' .env
           sed -i 's/^SESSION_COOKIE_SECURE=.*/SESSION_COOKIE_SECURE=false/' .env
+          sed -i 's|^PUBLIC_BASE_URL=.*|PUBLIC_BASE_URL=http://localhost:8088|' .env
 
       - name: Validate operations scripts and Compose
         run: |
