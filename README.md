@@ -13,24 +13,25 @@ A light, professional wholesale bag catalogue with a static-first public website
 - product search and category filtering
 - quantity-aware WhatsApp enquiry messages
 - generic wholesale enquiry builder
-- runtime catalogue snapshot with graceful demo fallback
+- runtime catalogue snapshot; demo data is development-only and never shown as real production stock
 
 ### Private admin
 
 - session-protected admin login
 - create/edit/delete products
 - update price, MOQ, stock and restock time
-- upload real JPEG/PNG/WebP product photos
-- generate a marketing image from real product references
+- upload real JPEG/PNG/WebP product photos with format and total-count validation
+- automatically generate a marketing draft after photo upload when OpenAI is configured
 - review/regenerate/approve generated marketing visuals
 - publish/unpublish products without editing source code
 - dashboard for product/publish/stock/image state
+- editable brand, WhatsApp, phone, email, address and public-site settings
 
 ### AI image workflow
 
 The server sends the real product references to the OpenAI Images API with a fidelity-focused prompt. The AI is deliberately told **not to generate product text**. After image generation, the Spring Boot service places verified product information on the visual itself so the catalogue does not depend on AI-generated spelling, prices or specifications.
 
-Generated images are drafts until an admin explicitly approves them.
+Generated images are drafts until an admin explicitly approves them. Transient image-API failures are retried with bounded backoff; failures remain recorded in generation history for diagnosis.
 
 ### Low-load production architecture
 
@@ -84,6 +85,8 @@ The repository includes:
 - production `nginx.conf`
 - `.env.example`
 - GitHub Actions CI
+- end-to-end production Docker smoke tests
+- `scripts/backup.sh` for consistent persistent-data backups
 
 ## Final inputs needed before going live
 
