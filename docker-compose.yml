@@ -60,12 +60,19 @@ services:
       - swami-data:/data:ro
     mem_limit: 96m
     pids_limit: 96
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
     security_opt:
       - no-new-privileges:true
     logging: *default-logging
 
   backup-ops:
-    image: alpine:3.24.2
+    image: alpine:3.24.2@sha256:31b6477333eb8257db9e5d7c3a7264fd0467928756f0bbcc27d35bea5d28cdbd
     profiles: ["ops"]
     user: "${OPS_UID:-0}:${OPS_GID:-0}"
     volumes:
@@ -78,7 +85,7 @@ services:
       - no-new-privileges:true
 
   restore-ops:
-    image: alpine:3.24.2
+    image: alpine:3.24.2@sha256:31b6477333eb8257db9e5d7c3a7264fd0467928756f0bbcc27d35bea5d28cdbd
     profiles: ["ops"]
     volumes:
       - swami-data:/data
