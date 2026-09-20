@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -51,9 +52,48 @@ public class CatalogExporter {
                             publicSettings.businessEmail(),
                             publicSettings.businessAddress(),
                             publicSettings.publicBaseUrl())));
+            writeAtomically(catalogDir.resolve("sitemap.xml"),
+                    buildSitemap(publicSettings.publicBaseUrl(), products).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to export public catalogue.", e);
         }
+    }
+
+    private String buildSitemap(String publicBaseUrl, List<CatalogProduct> products) {
+        String base = publicBaseUrl == null ? "" : publicBaseUrl.trim().replaceAll("/+$", "");
+        if (!base.matches("^https?://.+")) {
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"></urlset>\n";
+        }
+
+        var xml = new StringBuilder();
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        appendUrl(xml, base + "/", "1.0");
+        appendUrl(xml, base + "/products", "0.9");
+        appendUrl(xml, base + "/about", "0.6");
+        appendUrl(xml, base + "/contact", "0.6");
+        for (CatalogProduct product : products) {
+            appendUrl(xml, base + "/products/" + product.slug(), "0.8");
+        }
+        xml.append("</urlset>\n");
+        return xml.toString();
+    }
+
+    private void appendUrl(StringBuilder xml, String url, String priority) {
+        xml.append("  <url><loc>")
+                .append(escapeXml(url))
+                .append("</loc><priority>")
+                .append(priority)
+                .append("</priority></url>\n");
+    }
+
+    private String escapeXml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     private CatalogProduct toCatalogProduct(Product product) {

@@ -215,6 +215,8 @@ jobs:
           curl -fsS "$base/catalog/config.json" > /tmp/public-config.json
           grep -q '"brandName":"Swami Bags CI"' /tmp/public-config.json
           grep -q '"whatsappNumber":"919876543210"' /tmp/public-config.json
+          curl -fsS "$base/sitemap.xml" > /tmp/sitemap.xml
+          grep -q 'https://example.com/products/ci-smoke-bag' /tmp/sitemap.xml
 
       - name: Verify backup and restore operations
         run: |
