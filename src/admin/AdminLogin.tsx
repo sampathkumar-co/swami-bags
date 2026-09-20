@@ -1,5 +1,5 @@
 import { LockKeyhole, LogIn } from 'lucide-react'
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'\nimport type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { adminApi } from '../lib/adminApi'
 

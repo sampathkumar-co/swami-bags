@@ -1,67 +1,99 @@
 # Swami Bags
 
-A premium, light-themed wholesale bag catalogue focused on fast browsing and direct WhatsApp enquiries.
+A light, professional wholesale bag catalogue with a static-first public website and a private Spring Boot admin workflow.
 
-## Current stack
+## What is implemented
 
-- React 19
-- Vite
-- TypeScript
+### Public website
+
+- Home, catalogue, product detail, About and Contact
+- Cash Bags, Luggage Bags, Jute Bags, Zip Bags and Purses
+- wholesale price, MOQ, material, stock and restock information
+- responsive light cream / burgundy visual system
+- product search and category filtering
+- quantity-aware WhatsApp enquiry messages
+- generic wholesale enquiry builder
+- runtime catalogue snapshot with graceful demo fallback
+
+### Private admin
+
+- session-protected admin login
+- create/edit/delete products
+- update price, MOQ, stock and restock time
+- upload real JPEG/PNG/WebP product photos
+- generate a marketing image from real product references
+- review/regenerate/approve generated marketing visuals
+- publish/unpublish products without editing source code
+- dashboard for product/publish/stock/image state
+
+### AI image workflow
+
+The server sends the real product references to the OpenAI Images API with a fidelity-focused prompt. The AI is deliberately told **not to generate product text**. After image generation, the Spring Boot service places verified product information on the visual itself so the catalogue does not depend on AI-generated spelling, prices or specifications.
+
+Generated images are drafts until an admin explicitly approves them.
+
+### Low-load production architecture
+
+```text
+Nginx
+├── React/Vite static files
+├── /catalog/*.json
+├── /media/*
+└── /api/* → Spring Boot admin service
+              └── SQLite + OpenAI
+```
+
+Public browsing is served by Nginx. Spring Boot/SQLite are only involved in admin actions, so the VPS does not do application work for every catalogue visitor.
+
+## Stack
+
+- React 19 + Vite + TypeScript
 - React Router
-- Lucide icons
-- Static-first product data
+- Spring Boot 4 / Java 21
+- Spring Security
+- SQLite
+- OpenAI Images API
+- Nginx
+- Docker Compose
+- GitHub Actions
 
-## Current pages
-
-- Home
-- Products / catalogue
-- Product detail
-- About
-- Contact
-
-## Product information model
-
-Each product supports:
-
-- Product code
-- Category
-- Material
-- Wholesale price
-- MOQ
-- Available quantity
-- Restock time
-- Size
-- Product features
-- Product image
-- Direct WhatsApp enquiry message
-
-## Design direction
-
-The UI uses a warm white / cream canvas, burgundy brand accents, editorial serif headings, generous whitespace, softly elevated cards and a professional wholesale-first layout.
-
-## Next build stages
-
-1. Replace sample images and placeholder business details with client-provided content.
-2. Add a lightweight product-management workflow.
-3. Add automatic AI marketing-image generation when a new product is created.
-4. Add VPS/Nginx production configuration and caching.
-5. Run accessibility, mobile, SEO and performance release checks.
-
-## Development
+## Local frontend checks
 
 ```bash
-npm install
-npm run dev
+npm ci
 npm run lint
 npm run build
 ```
-## VPS deployment
 
-The public catalogue is built as static files and served by Nginx. A multi-stage Dockerfile and production Nginx config are included.
+## Server checks
 
 ```bash
-docker build -t swami-bags .
-docker run -d --name swami-bags -p 8080:80 --restart unless-stopped swami-bags
+cd server
+mvn test package
 ```
 
-The Nginx configuration includes SPA route fallback, long-lived cache headers for hashed assets, gzip compression, basic security headers and a lightweight `/healthz` endpoint.
+## Production
+
+See [DEPLOYMENT.md](DEPLOYMENT.md).
+
+The repository includes:
+
+- `Dockerfile` for the static web container
+- `server/Dockerfile` for Spring Boot
+- `docker-compose.yml`
+- production `nginx.conf`
+- `.env.example`
+- GitHub Actions CI
+
+## Final inputs needed before going live
+
+The app is intentionally configured with placeholders for client-specific inputs. Before launch provide the real:
+
+- WhatsApp / phone number
+- logo / brand details if they change
+- business address/email
+- product photos and product data
+- OpenAI API key
+- VPS/domain/HTTPS details
+
+Do not put real secrets in Git.
