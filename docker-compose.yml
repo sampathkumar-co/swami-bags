@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: ./server
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DATA_DIR: /data
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      BRAND_NAME: ${BRAND_NAME:-Swami Bags}
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
+      BUSINESS_PHONE: ${BUSINESS_PHONE:-}
+      BUSINESS_EMAIL: ${BUSINESS_EMAIL:-}
+      BUSINESS_ADDRESS: ${BUSINESS_ADDRESS:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8088}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_IMAGE_MODEL: ${OPENAI_IMAGE_MODEL:-gpt-image-2.5-sunburst}
+      OPENAI_IMAGE_QUALITY: ${OPENAI_IMAGE_QUALITY:-medium}
+      OPENAI_IMAGE_SIZE: ${OPENAI_IMAGE_SIZE:-1536x1024}
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m -Djava.awt.headless=true"
+    volumes:
+      - swami-data:/data
+    expose:
+      - "8080"
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8088}:80"
+    volumes:
+      - swami-data:/data:ro
+    mem_limit: 96m
+
+volumes:
+  swami-data:
