@@ -1,9 +1,24 @@
-import { MessageCircle, PackageCheck, Phone, Truck } from 'lucide-react'
-import { whatsappNumber } from '../data/products'
+import { MessageCircle, PackageCheck, Phone, Send, Truck } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { categories, whatsappNumber } from '../data/products'
 
 export default function Contact() {
-  const message = 'Hello, I would like to discuss a wholesale bag requirement.'
-  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
+  const [name, setName] = useState('')
+  const [category, setCategory] = useState('Cash Bags')
+  const [quantity, setQuantity] = useState(100)
+  const [note, setNote] = useState('')
+
+  const whatsappHref = useMemo(() => {
+    const lines = [
+      'Hello, I would like to discuss a wholesale bag requirement.',
+      name.trim() ? `Name: ${name.trim()}` : '',
+      `Category: ${category}`,
+      `Approx. quantity: ${Math.max(1, quantity)} pieces`,
+      note.trim() ? `Requirement: ${note.trim()}` : '',
+      'Please share suitable products, pricing and availability. Thank you.'
+    ].filter(Boolean)
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join('\n'))}`
+  }, [name, category, quantity, note])
 
   return (
     <section className="page-section contact-page">
@@ -11,11 +26,47 @@ export default function Contact() {
         <div className="contact-copy">
           <span className="kicker">Wholesale enquiries</span>
           <h1>Tell us what you need. We’ll keep the next step simple.</h1>
-          <p>Share the bag type, expected quantity and any branding requirement. For a specific product, use the WhatsApp button on that product page so the product code is included automatically.</p>
-          <a className="btn btn-whatsapp btn-large" href={whatsappHref} target="_blank" rel="noreferrer">
-            <MessageCircle size={19} />
-            Start WhatsApp enquiry
-          </a>
+          <p>Share the bag type, expected quantity and any branding requirement. We prepare the WhatsApp message automatically so you can send a complete enquiry in one tap.</p>
+
+          <div className="enquiry-form">
+            <label>
+              <span>Your name <small>optional</small></span>
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Business / contact name" />
+            </label>
+
+            <div className="form-row">
+              <label>
+                <span>Bag category</span>
+                <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                  {categories.filter((item) => item !== 'All').map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>Approx. quantity</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
+                />
+              </label>
+            </div>
+
+            <label>
+              <span>Requirement <small>optional</small></span>
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Example: need logo printing, red colour, delivery by next week..."
+                rows={4}
+              />
+            </label>
+
+            <a className="btn btn-whatsapp btn-large" href={whatsappHref} target="_blank" rel="noreferrer">
+              <Send size={18} />
+              Prepare enquiry on WhatsApp
+            </a>
+          </div>
         </div>
 
         <aside className="contact-card">
