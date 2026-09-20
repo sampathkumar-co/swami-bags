@@ -17,9 +17,11 @@ public class OpenAiImageService {
     private final AppProperties properties;
     private final RestClient restClient;
 
-    public OpenAiImageService(AppProperties properties, RestClient.Builder builder) {
+    public OpenAiImageService(AppProperties properties) {
         this.properties = properties;
-        this.restClient = builder.baseUrl("https://api.openai.com").build();
+        this.restClient = RestClient.builder()
+                .baseUrl("https://api.openai.com")
+                .build();
     }
 
     public byte[] edit(List<Path> references, String prompt) {
