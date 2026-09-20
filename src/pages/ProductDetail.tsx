@@ -1,4 +1,5 @@
-import { ArrowLeft, Check, MessageCircle, PackageCheck, ShieldCheck, Truck } from 'lucide-react'
+import { ArrowLeft, Check, MessageCircle, Minus, PackageCheck, Plus, ShieldCheck, Truck } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
 import { products, whatsappNumber } from '../data/products'
@@ -6,6 +7,7 @@ import { products, whatsappNumber } from '../data/products'
 export default function ProductDetail() {
   const { slug } = useParams()
   const product = products.find((item) => item.slug === slug)
+  const [quantity, setQuantity] = useState(product?.moq ?? 1)
 
   if (!product) {
     return (
@@ -19,7 +21,15 @@ export default function ProductDetail() {
     )
   }
 
-  const message = `Hello, I'm interested in ${product.name} (${product.id}). MOQ: ${product.moq} pieces. Please share current wholesale pricing and availability.`
+  const quantityStep = Math.max(1, Math.round(product.moq / 5))
+  const normalizedQuantity = Math.max(product.moq, quantity || product.moq)
+  const message = [
+    `Hello, I'm interested in ${product.name} (${product.id}).`,
+    `Material: ${product.material}`,
+    `Required quantity: ${normalizedQuantity} pieces`,
+    `Listed wholesale price: ₹${product.price} / piece`,
+    'Please confirm current availability, final bulk pricing and dispatch time. Thank you.'
+  ].join('\n')
   const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 3)
 
@@ -65,11 +75,37 @@ export default function ProductDetail() {
                 <div><span>Size</span><strong>{product.size}</strong></div>
               </div>
 
+              <div className="quantity-enquiry">
+                <div>
+                  <span>Required quantity</span>
+                  <small>MOQ {product.moq} pieces</small>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    aria-label="Decrease quantity"
+                    onClick={() => setQuantity((value) => Math.max(product.moq, value - quantityStep))}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <input
+                    type="number"
+                    min={product.moq}
+                    step={quantityStep}
+                    value={quantity}
+                    onChange={(event) => setQuantity(Math.max(product.moq, Number(event.target.value) || product.moq))}
+                    aria-label="Required quantity"
+                  />
+                  <button aria-label="Increase quantity" onClick={() => setQuantity((value) => value + quantityStep)}>
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
               <a className="btn btn-whatsapp btn-large btn-full" href={whatsappHref} target="_blank" rel="noreferrer">
                 <MessageCircle size={19} />
                 Enquire on WhatsApp
               </a>
-              <small className="helper-text">The message is pre-filled with this product code and MOQ.</small>
+              <small className="helper-text">Your product, material and requested quantity are added to the message automatically.</small>
             </div>
           </div>
         </div>
