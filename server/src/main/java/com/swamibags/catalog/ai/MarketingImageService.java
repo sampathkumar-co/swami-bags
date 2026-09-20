@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MarketingImageService {
@@ -41,7 +40,6 @@ public class MarketingImageService {
         this.properties = properties;
     }
 
-    @Transactional
     public ProductImage generate(String productId) {
         Product product = repository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found."));
