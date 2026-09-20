@@ -65,6 +65,7 @@ jobs:
       - name: Prepare runtime environment
         run: |
           cp .env.example .env
+          chmod 600 .env
           sed -i 's/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=ci-test-password-12345/' .env
           sed -i 's/^SESSION_COOKIE_SECURE=.*/SESSION_COOKIE_SECURE=false/' .env
 
