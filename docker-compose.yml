@@ -14,7 +14,7 @@ services:
       DATA_DIR: /data
       ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME in .env}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       BRAND_NAME: ${BRAND_NAME:-Swami Bags}
       WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
       BUSINESS_PHONE: ${BUSINESS_PHONE:-}
@@ -31,6 +31,14 @@ services:
     expose:
       - "8080"
     mem_limit: 384m
+    pids_limit: 160
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     logging: *default-logging
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
@@ -47,10 +55,13 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "${WEB_PORT:-8088}:80"
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8088}:80"
     volumes:
       - swami-data:/data:ro
     mem_limit: 96m
+    pids_limit: 96
+    security_opt:
+      - no-new-privileges:true
     logging: *default-logging
 
 volumes:
