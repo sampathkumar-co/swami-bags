@@ -1,23 +1,18 @@
-export type Product = {
-  id: string
-  slug: string
-  name: string
-  category: 'Cash Bags' | 'Luggage Bags' | 'Jute Bags' | 'Zip Bags' | 'Purses'
-  material: string
-  price: number
-  moq: number
-  stock: number
-  restockDays?: number
-  image: string
-  accent: string
-  description: string
-  size: string
-  features: string[]
-}
+import type { CatalogProduct, ProductCategory, PublicConfig } from '../types/catalog'
 
 export const categories = ['All', 'Cash Bags', 'Luggage Bags', 'Jute Bags', 'Zip Bags', 'Purses'] as const
+export const productCategories: ProductCategory[] = ['Cash Bags', 'Luggage Bags', 'Jute Bags', 'Zip Bags', 'Purses']
 
-export const products: Product[] = [
+export const defaultPublicConfig: PublicConfig = {
+  brandName: 'Swami Bags',
+  whatsappNumber: '919876543210',
+  businessPhone: '+91 98765 43210',
+  businessEmail: '',
+  businessAddress: '',
+  publicBaseUrl: '',
+}
+
+export const fallbackProducts: CatalogProduct[] = [
   {
     id: 'SB-001',
     slug: 'classic-cash-bag',
@@ -25,10 +20,11 @@ export const products: Product[] = [
     category: 'Cash Bags',
     material: 'Heavy-duty polyester',
     price: 120,
+    priceUnit: 'piece',
     moq: 50,
     stock: 500,
     image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85',
-    accent: '#991b1b',
+    images: [],
     description: 'A secure, structured everyday cash bag designed for wholesale use in retail, offices and institutions.',
     size: '14 × 10 × 5 in',
     features: ['Double zipper', 'Reinforced handles', 'Two compartments', 'Custom logo available'],
@@ -40,10 +36,11 @@ export const products: Product[] = [
     category: 'Luggage Bags',
     material: 'Premium nylon',
     price: 350,
+    priceUnit: 'piece',
     moq: 30,
     stock: 120,
     image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85',
-    accent: '#172554',
+    images: [],
     description: 'A dependable travel duffle with reinforced construction, roomy storage and a clean business-ready finish.',
     size: '20 × 11 × 10 in',
     features: ['Large main compartment', 'Shoulder strap', 'Strong base', 'Bulk customisation'],
@@ -55,10 +52,11 @@ export const products: Product[] = [
     category: 'Jute Bags',
     material: 'Natural jute',
     price: 65,
+    priceUnit: 'piece',
     moq: 100,
     stock: 500,
     image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=900&q=85',
-    accent: '#8b6f47',
+    images: [],
     description: 'A simple reusable jute tote for gifting, retail packaging, events and everyday wholesale supply.',
     size: '15 × 14 × 5 in',
     features: ['Reusable', 'Strong stitched handles', 'Logo printing', 'Eco-friendly material'],
@@ -70,11 +68,12 @@ export const products: Product[] = [
     category: 'Zip Bags',
     material: 'Canvas fabric',
     price: 45,
+    priceUnit: 'piece',
     moq: 100,
     stock: 0,
     restockDays: 7,
     image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=900&q=85',
-    accent: '#be123c',
+    images: [],
     description: 'Compact, practical and easy to brand, this zip pouch works well for gifting, storage and promotional orders.',
     size: '10 × 7 in',
     features: ['Smooth zipper', 'Printed options', 'Lightweight', 'Custom colours'],
@@ -86,30 +85,13 @@ export const products: Product[] = [
     category: 'Purses',
     material: 'PU leather',
     price: 180,
+    priceUnit: 'piece',
     moq: 50,
     stock: 75,
     image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=900&q=85',
-    accent: '#9f1239',
+    images: [],
     description: 'A polished everyday purse with a compact silhouette and practical storage for wholesale fashion supply.',
     size: '11 × 8 × 4 in',
     features: ['Soft lining', 'Secure closure', 'Multiple pockets', 'Wholesale colour options'],
   },
-  {
-    id: 'SB-205',
-    slug: 'printed-jute-shopper',
-    name: 'Printed Jute Shopper',
-    category: 'Jute Bags',
-    material: 'Laminated jute',
-    price: 82,
-    moq: 100,
-    stock: 340,
-    image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=900&q=85',
-    accent: '#7c5c3e',
-    description: 'A stronger laminated jute shopper made for branded retail packaging, corporate gifting and repeat use.',
-    size: '16 × 15 × 6 in',
-    features: ['Laminated interior', 'Print-ready surface', 'Wide gusset', 'Strong handles'],
-  },
 ]
-
-export const featuredProducts = products.slice(0, 4)
-export const whatsappNumber = '919876543210'

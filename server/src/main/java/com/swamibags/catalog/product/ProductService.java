@@ -101,7 +101,7 @@ public class ProductService {
     @Transactional
     public Product setPublished(String id, boolean published) {
         Product product = get(id);
-        if (published && product.images().stream().noneMatch(image -> image.isOriginal() || image.approved())) {
+        if (published && product.images().stream().noneMatch(ProductImage::isOriginal)) {
             throw new IllegalArgumentException("Upload at least one real product image before publishing.");
         }
         repository.setPublished(id, published);
@@ -169,10 +169,14 @@ public class ProductService {
         }
         String candidate = base;
         int suffix = 2;
-        while (repository.findAll().stream().anyMatch(product -> product.slug().equals(candidate))) {
+        while (slugExists(candidate)) {
             candidate = base + "-" + suffix++;
         }
         return candidate;
+    }
+
+    private boolean slugExists(String candidate) {
+        return repository.findAll().stream().anyMatch(product -> product.slug().equals(candidate));
     }
 
     private String normalizeId(String requested) {
@@ -186,12 +190,11 @@ public class ProductService {
         if (value == null) {
             return "";
         }
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)", "");
-        return normalized;
     }
 
     private String clean(String value) {

@@ -1,6 +1,5 @@
 package com.swamibags.catalog.product;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -155,6 +154,8 @@ public class ProductRepository {
     }
 
     private Product mapProductWithoutImages(ResultSet rs, int rowNum) throws SQLException {
+        Object restockValue = rs.getObject("restock_days");
+        Integer restockDays = restockValue == null ? null : ((Number) restockValue).intValue();
         return new Product(
                 rs.getString("id"),
                 rs.getString("slug"),
@@ -165,7 +166,7 @@ public class ProductRepository {
                 rs.getString("price_unit"),
                 rs.getInt("moq"),
                 rs.getInt("stock"),
-                (Integer) rs.getObject("restock_days"),
+                restockDays,
                 rs.getString("size"),
                 rs.getString("description"),
                 readFeatures(rs.getString("features_json")),
