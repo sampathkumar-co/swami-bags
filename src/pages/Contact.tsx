@@ -1,4 +1,4 @@
-import { MessageCircle, PackageCheck, Phone, Send, Truck } from 'lucide-react'
+import { Mail, MapPin, MessageCircle, PackageCheck, Phone, Send, Truck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useCatalog } from '../context/CatalogContext'
 import { productCategories } from '../data/products'
@@ -69,9 +69,14 @@ export default function Contact() {
           </div>
           <div className="contact-row"><MessageCircle /><div><span>WhatsApp</span><strong>{config.whatsappNumber ? `+${config.whatsappNumber}` : 'Add number before launch'}</strong></div></div>
           <div className="contact-row"><Phone /><div><span>Phone</span><strong>{config.businessPhone || 'Add phone before launch'}</strong></div></div>
+          {config.businessEmail && (
+            <div className="contact-row"><Mail /><div><span>Email</span><a href={`mailto:${config.businessEmail}`}><strong>{config.businessEmail}</strong></a></div></div>
+          )}
+          {config.businessAddress && (
+            <div className="contact-row"><MapPin /><div><span>Address</span><strong>{config.businessAddress}</strong></div></div>
+          )}
           <div className="contact-row"><PackageCheck /><div><span>Ordering</span><strong>Bulk quantities / MOQ based</strong></div></div>
           <div className="contact-row"><Truck /><div><span>Supply</span><strong>Pan India</strong></div></div>
-          {config.businessAddress && <p className="contact-note">{config.businessAddress}</p>}
         </aside>
       </div>
     </section>
