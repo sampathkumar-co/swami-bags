@@ -40,7 +40,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         setProducts(fallbackProducts)
         setUsingFallback(true)
       } else {
-        setProducts([])
+        // Keep the last successfully loaded catalogue during a transient network/server failure.
+        // On first load this naturally remains an empty array, so production never shows demo inventory.
         setUsingFallback(false)
       }
     }
