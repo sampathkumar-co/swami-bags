@@ -241,6 +241,29 @@ jobs:
           curl -fsS "$base/catalog/config.json" > /tmp/config-after-restore.json
           grep -q '"brandName":"Swami Bags CI"' /tmp/config-after-restore.json
 
+      - name: Verify public catalogue stays available without the API
+        run: |
+          set -euo pipefail
+          base="http://127.0.0.1:8088"
+          image_path="$(python3 -c 'import json; d=json.load(open("/tmp/catalog-after-restore.json")); print(next(p["image"] for p in d["products"] if p["id"]=="SB-CI-01"))')"
+
+          docker compose stop api
+          curl -fsS "$base/" >/tmp/home-with-api-stopped.html
+          curl -fsS "$base/catalog/products.json" >/tmp/catalog-with-api-stopped.json
+          curl -fsS "$base$image_path" >/tmp/image-with-api-stopped.png
+          grep -q '"CI Smoke Bag"' /tmp/catalog-with-api-stopped.json
+          test -s /tmp/image-with-api-stopped.png
+
+          docker compose start api
+          for attempt in {1..30}; do
+            if curl -fsS "$base/api/admin/auth/csrf" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs --tail=100 api
+          exit 1
+
       - name: Show container state
         run: docker compose ps
 
