@@ -106,7 +106,9 @@ public class MarketingPosterService {
             int priceY = panelY + panelH - 160;
             g.setColor(WINE);
             g.setFont(new Font(Font.SERIF, Font.BOLD, 34));
-            String price = "Wholesale ₹" + product.price().setScale(0, RoundingMode.HALF_UP) + " / " + product.priceUnit();
+            String price = product.price().signum() > 0
+                    ? "Wholesale ₹" + product.price().setScale(0, RoundingMode.HALF_UP) + " / " + product.priceUnit()
+                    : "Wholesale price on enquiry";
             g.drawString(price, x, priceY);
 
             g.setColor(MUTED);

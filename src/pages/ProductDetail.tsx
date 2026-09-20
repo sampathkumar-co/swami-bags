@@ -26,7 +26,7 @@ export default function ProductDetail() {
       `Hello, I'm interested in ${product.name} (${product.id}).`,
       `Material: ${product.material}`,
       `Required quantity: ${requested} pieces`,
-      `Listed wholesale price: ₹${product.price} / ${product.priceUnit || 'piece'}`,
+      product.price > 0 ? `Listed wholesale price: ₹${product.price} / ${product.priceUnit || 'piece'}` : 'Please share the current wholesale price.',
       'Please confirm current availability, final bulk pricing and dispatch time. Thank you.',
     ].join('\n')
     return whatsappUrl(config.whatsappNumber, message)
@@ -91,7 +91,11 @@ export default function ProductDetail() {
                 </span>
               </div>
 
-              <div className="detail-price"><strong>₹{product.price}</strong><span>/ {product.priceUnit || 'piece'}</span></div>
+              <div className="detail-price">
+                {product.price > 0
+                  ? <><strong>₹{product.price}</strong><span>/ {product.priceUnit || 'piece'}</span></>
+                  : <strong>Price on enquiry</strong>}
+              </div>
               <p className="detail-description">{product.description}</p>
 
               <div className="spec-table">

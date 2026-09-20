@@ -33,8 +33,11 @@ export default function ProductCard({ product }: { product: CatalogProduct }) {
           <span className="product-code">{product.id} · {product.material}</span>
         </div>
         <div className="price-row">
-          <strong>₹{product.price}</strong>
-          <span>/ {product.priceUnit || 'piece'}</span>
+          {product.price > 0 ? (
+            <><strong>₹{product.price}</strong><span>/ {product.priceUnit || 'piece'}</span></>
+          ) : (
+            <strong>Price on enquiry</strong>
+          )}
         </div>
         <div className="product-meta">
           <span>MOQ: {product.moq} pcs</span>
