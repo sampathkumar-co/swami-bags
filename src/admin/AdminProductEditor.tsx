@@ -1,5 +1,6 @@
 import { ArrowLeft, Check, ImagePlus, LoaderCircle, Save, Sparkles, Trash2, Upload } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'\nimport type { FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { productCategories } from '../data/products'
 import { adminApi } from '../lib/adminApi'
