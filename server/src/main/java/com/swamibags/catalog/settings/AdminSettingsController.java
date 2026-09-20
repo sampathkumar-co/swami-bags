@@ -2,6 +2,7 @@ package com.swamibags.catalog.settings;
 
 import com.swamibags.catalog.product.CatalogExporter;
 import jakarta.validation.Valid;
+import java.net.URI;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,9 +42,23 @@ public class AdminSettingsController {
         if (!email.isBlank() && !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
             throw new IllegalArgumentException("Enter a valid business email address.");
         }
+
         String baseUrl = request.publicBaseUrl() == null ? "" : request.publicBaseUrl().trim();
-        if (!baseUrl.isBlank() && !(baseUrl.startsWith("https://") || baseUrl.startsWith("http://"))) {
-            throw new IllegalArgumentException("Public website URL must start with http:// or https://.");
+        if (!baseUrl.isBlank()) {
+            try {
+                URI uri = URI.create(baseUrl);
+                boolean allowedScheme = "https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme());
+                boolean rootPath = uri.getPath() == null || uri.getPath().isBlank() || "/".equals(uri.getPath());
+                if (!allowedScheme || uri.getHost() == null || uri.getHost().isBlank()
+                        || uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null || !rootPath) {
+                    throw new IllegalArgumentException("Public website URL must be a root http(s) URL with a valid host.");
+                }
+            } catch (IllegalArgumentException exception) {
+                if ("Public website URL must be a root http(s) URL with a valid host.".equals(exception.getMessage())) {
+                    throw exception;
+                }
+                throw new IllegalArgumentException("Enter a valid public website URL.", exception);
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/admin/auth/csrf", "/api/admin/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().permitAll())
+                        .anyRequest().denyAll())
                 .sessionManagement(session -> session.sessionFixation(fixation -> fixation.migrateSession()))
                 .formLogin(login -> login
                         .loginProcessingUrl("/api/admin/auth/login")
