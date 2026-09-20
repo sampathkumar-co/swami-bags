@@ -4,8 +4,8 @@ import { useCatalog } from '../context/CatalogContext'
 import { fallbackProducts } from '../data/products'
 
 export default function About() {
-  const { products, config } = useCatalog()
-  const visuals = products.length ? products : fallbackProducts
+  const { products, config, usingFallback } = useCatalog()
+  const visuals = products.length ? products : (usingFallback ? fallbackProducts : [])
 
   return (
     <>
@@ -18,7 +18,9 @@ export default function About() {
             <Link className="btn btn-primary btn-large" to="/products">Explore catalogue <ArrowRight size={18} /></Link>
           </div>
           <div className="about-visual">
-            <img src={visuals[2]?.image || fallbackProducts[2].image} alt="Wholesale bag range" />
+            {visuals[2]?.image
+              ? <img src={visuals[2].image} alt="Wholesale bag range" />
+              : <div className="product-placeholder">Real product photography will appear here.</div>}
             <div className="about-visual-note">Good bags.<br />Better business.</div>
           </div>
         </div>
@@ -46,7 +48,9 @@ export default function About() {
             </div>
           </div>
           <div className="story-image">
-            <img src={visuals[1]?.image || fallbackProducts[1].image} alt="Wholesale bag catalogue" loading="lazy" />
+            {visuals[1]?.image
+              ? <img src={visuals[1].image} alt="Wholesale bag catalogue" loading="lazy" />
+              : <div className="product-placeholder">Published catalogue imagery will appear here.</div>}
           </div>
         </div>
       </section>

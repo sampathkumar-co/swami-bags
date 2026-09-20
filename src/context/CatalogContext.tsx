@@ -36,8 +36,13 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     }
 
     if (!catalogLoaded) {
-      setProducts(fallbackProducts)
-      setUsingFallback(true)
+      if (import.meta.env.DEV) {
+        setProducts(fallbackProducts)
+        setUsingFallback(true)
+      } else {
+        setProducts([])
+        setUsingFallback(false)
+      }
     }
 
     if (configResult.status === 'fulfilled' && configResult.value.ok) {

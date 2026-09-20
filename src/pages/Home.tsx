@@ -16,7 +16,7 @@ const categoryVisuals = [
 export default function Home() {
   const { products, config, loading, usingFallback } = useCatalog()
   const featured = products.slice(0, 4)
-  const visualProducts = products.length ? products : fallbackProducts
+  const visualProducts = products.length ? products : (usingFallback ? fallbackProducts : [])
   const enquiryHref = whatsappUrl(
     config.whatsappNumber,
     'Hello, I would like to enquire about your wholesale bag range.',
@@ -48,14 +48,20 @@ export default function Home() {
 
           <div className="hero-showcase" aria-label="Featured wholesale bags">
             <div className="hero-card hero-card-main">
-              <img src={visualProducts[2]?.image || fallbackProducts[2].image} alt="Jute wholesale bag" />
+              {visualProducts[2]?.image
+                ? <img src={visualProducts[2].image} alt="Jute wholesale bag" />
+                : <div className="product-placeholder">Real product image will appear here</div>}
               <span>Better materials.<br />Brighter business.</span>
             </div>
             <div className="hero-card hero-card-top">
-              <img src={visualProducts[1]?.image || fallbackProducts[1].image} alt="Travel bag" />
+              {visualProducts[1]?.image
+                ? <img src={visualProducts[1].image} alt="Travel bag" />
+                : <div className="product-placeholder">Wholesale catalogue</div>}
             </div>
             <div className="hero-card hero-card-bottom">
-              <img src={visualProducts[4]?.image || fallbackProducts[4].image} alt="Ladies purse" />
+              {visualProducts[4]?.image
+                ? <img src={visualProducts[4].image} alt="Ladies purse" />
+                : <div className="product-placeholder">Wholesale catalogue</div>}
             </div>
             <span className="script-note">More than bags — business carried forward.</span>
           </div>
@@ -83,10 +89,14 @@ export default function Home() {
           </div>
           <div className="category-grid">
             {categoryVisuals.map(([name, subtitle], index) => {
-              const sample = products.find((item) => item.category === name) ?? fallbackProducts[index]
+              const sample = products.find((item) => item.category === name) ?? (usingFallback ? fallbackProducts[index] : undefined)
               return (
                 <Link key={name} to={`/products?category=${encodeURIComponent(name)}`} className="category-card">
-                  <div className="category-image"><img src={sample?.image || fallbackProducts[0].image} alt="" loading="lazy" /></div>
+                  <div className="category-image">
+                    {sample?.image
+                      ? <img src={sample.image} alt="" loading="lazy" />
+                      : <div className="product-placeholder">{name}</div>}
+                  </div>
                   <strong>{name}</strong>
                   <span>{subtitle}</span>
                   <i><ArrowRight size={15} /></i>
@@ -127,7 +137,9 @@ export default function Home() {
       <section className="section">
         <div className="container story-panel">
           <div className="story-image">
-            <img src={visualProducts[0]?.image || fallbackProducts[0].image} alt="Wholesale bag supply" loading="lazy" />
+            {visualProducts[0]?.image
+              ? <img src={visualProducts[0].image} alt="Wholesale bag supply" loading="lazy" />
+              : <div className="product-placeholder">Real Swami Bags product photography will appear here.</div>}
           </div>
           <div className="story-copy">
             <span className="kicker">Built on trust</span>
