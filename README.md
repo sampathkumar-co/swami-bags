@@ -55,3 +55,13 @@ npm run dev
 npm run lint
 npm run build
 ```
+## VPS deployment
+
+The public catalogue is built as static files and served by Nginx. A multi-stage Dockerfile and production Nginx config are included.
+
+```bash
+docker build -t swami-bags .
+docker run -d --name swami-bags -p 8080:80 --restart unless-stopped swami-bags
+```
+
+The Nginx configuration includes SPA route fallback, long-lived cache headers for hashed assets, gzip compression, basic security headers and a lightweight `/healthz` endpoint.
