@@ -156,6 +156,18 @@ jobs:
 
           grep -q '"kind":"ORIGINAL"' /tmp/upload.json
 
+          code="$(curl -sS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -X POST \
+            -o /tmp/ai-unconfigured.json -w '%{http_code}' \
+            "$base/api/admin/products/SB-CI-01/marketing/generate")"
+          test "$code" = "503"
+          grep -q 'OPENAI_API_KEY is not configured' /tmp/ai-unconfigured.json
+
+          curl -fsS -c "$cookies" -b "$cookies" \
+            "$base/api/admin/products/generations?productId=SB-CI-01" > /tmp/generations.json
+          grep -q '"status":"FAILED"' /tmp/generations.json
+
           curl -fsS -c "$cookies" -b "$cookies" \
             -H "X-XSRF-TOKEN: $csrf" \
             -H "Content-Type: application/json" \
