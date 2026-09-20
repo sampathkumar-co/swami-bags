@@ -46,6 +46,7 @@ export default function AdminProductEditor() {
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [aiConfigured, setAiConfigured] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -76,6 +77,16 @@ export default function AdminProductEditor() {
   }, [id])
 
   useEffect(() => { void load() }, [load])
+
+  useEffect(() => {
+    let active = true
+    adminApi.dashboard()
+      .then((dashboard) => {
+        if (active) setAiConfigured(dashboard.aiConfigured)
+      })
+      .catch(() => undefined)
+    return () => { active = false }
+  }, [])
 
   const payload = useMemo<ProductPayload>(() => ({
     id: isNew && form.id.trim() ? form.id.trim() : undefined,
@@ -123,7 +134,22 @@ export default function AdminProductEditor() {
     try {
       await adminApi.uploadImages(id, Array.from(files))
       await load()
-      setMessage('Product photos uploaded.')
+
+      if (aiConfigured) {
+        setBusy('ai')
+        try {
+          await adminApi.generateMarketing(id)
+          await load()
+          setMessage('Product photos uploaded and a fresh AI marketing image was generated. Review and approve it below.')
+        } catch (caught) {
+          setMessage('Product photos were saved successfully.')
+          setError(caught instanceof Error
+            ? `Photos saved, but automatic AI generation failed: ${caught.message}`
+            : 'Photos saved, but automatic AI generation failed.')
+        }
+      } else {
+        setMessage('Product photos uploaded. AI generation will become available after OPENAI_API_KEY is configured.')
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to upload photos.')
     } finally {
@@ -260,7 +286,7 @@ export default function AdminProductEditor() {
         {!isNew && id && (
           <div className="admin-editor-side">
             <section className="admin-panel">
-              <div className="admin-panel-head"><div><h2>Real product photos</h2><p>Upload up to 6 JPEG, PNG or WebP reference photos.</p></div></div>
+              <div className="admin-panel-head"><div><h2>Real product photos</h2><p>Upload up to 6 JPEG, PNG or WebP reference photos. When AI is configured, a marketing draft is generated automatically after upload.</p></div></div>
               <label className="admin-upload-zone">
                 {busy === 'upload' ? <LoaderCircle className="spin" /> : <Upload />}
                 <strong>{busy === 'upload' ? 'Uploading…' : 'Upload product photos'}</strong>
