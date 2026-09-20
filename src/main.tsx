@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { CatalogProvider } from './context/CatalogContext'
 import './index.css'
+import './admin.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
