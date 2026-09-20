@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -101,8 +102,8 @@ class ProductCatalogFlowIntegrationTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("does not match");
 
-        var validImages = java.util.stream.IntStream.range(0, 6)
-                .mapToObj(index -> new MockMultipartFile(
+        List<MultipartFile> validImages = java.util.stream.IntStream.range(0, 6)
+                .mapToObj(index -> (MultipartFile) new MockMultipartFile(
                         "files",
                         "bag-" + index + ".jpg",
                         "image/jpeg",
