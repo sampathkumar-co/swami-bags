@@ -20,7 +20,7 @@ A light, professional wholesale bag catalogue with a static-first public website
 - session-protected admin login
 - create/edit/delete products
 - update price, MOQ, stock and restock time
-- upload real JPEG/PNG/WebP product photos with format and total-count validation
+- upload real JPEG/PNG product photos with strict decode, dimension, sanitizing re-encode and total-count validation
 - automatically generate a marketing draft after photo upload when OpenAI is configured
 - review/regenerate/approve generated marketing visuals
 - publish/unpublish products without editing source code
@@ -85,7 +85,8 @@ The repository includes:
 - production `nginx.conf`
 - `.env.example`
 - GitHub Actions CI
-- end-to-end production Docker smoke tests
+- CodeQL static security analysis and Dependabot
+- end-to-end production Docker/security/backup-restore smoke tests
 - `scripts/backup.sh` for consistent persistent-data backups
 
 ## Final inputs needed before going live
