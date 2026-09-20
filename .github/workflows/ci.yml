@@ -82,7 +82,12 @@ jobs:
         run: docker compose build
 
       - name: Start production stack
-        run: docker compose up -d
+        run: |
+          if ! docker compose up -d; then
+            docker compose ps -a
+            docker compose logs --no-color --tail=250 api web
+            exit 1
+          fi
 
       - name: Wait for public web and admin API
         run: |
