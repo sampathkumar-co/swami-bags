@@ -288,3 +288,17 @@
 .admin-generation-status.completed { color: #147743; background: #eaf8ef; }
 .admin-generation-status.failed { color: #a33a2e; background: #fff0ed; }
 .admin-generation-status.running { color: #8c5a1b; background: #fff7e7; }
+
+.admin-ai-progress {
+  margin: -6px 18px 18px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 10px;
+  background: #f7f0e9;
+  color: var(--admin-muted);
+  font-size: .67rem;
+  line-height: 1.45;
+}
+.admin-ai-progress svg { flex: 0 0 auto; margin-top: 1px; color: var(--admin-wine); }
