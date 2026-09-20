@@ -81,6 +81,28 @@ jobs:
       - name: Build production images
         run: docker compose build
 
+      - name: Scan web image for high severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: swami-bags-web
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          scanners: vuln,secret
+
+      - name: Scan API image for high severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: swami-bags-api
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          scanners: vuln,secret
+
       - name: Start production stack
         run: |
           if ! docker compose up -d; then
@@ -110,6 +132,7 @@ jobs:
           grep -qi '^X-Content-Type-Options: nosniff' <<< "$headers"
           grep -qi '^X-Frame-Options: DENY' <<< "$headers"
           grep -qi '^Content-Security-Policy:' <<< "$headers"
+          ! grep -qi "style-src[^;]*'unsafe-inline'" <<< "$headers"
           grep -qi '^Referrer-Policy: strict-origin-when-cross-origin' <<< "$headers"
           grep -qi '^Strict-Transport-Security:' <<< "$headers"
 
@@ -121,6 +144,11 @@ jobs:
         run: |
           code="$(curl -sS -o /tmp/admin-response.json -w '%{http_code}' http://127.0.0.1:8088/api/admin/dashboard)"
           test "$code" = "401"
+
+      - name: Verify unknown API routes stay denied
+        run: |
+          code="$(curl -sS -o /tmp/unknown-api.json -w '%{http_code}' http://127.0.0.1:8088/api/not-a-real-route)"
+          test "$code" = "401" || test "$code" = "403"
 
       - name: Exercise authenticated product publish flow
         run: |
@@ -144,6 +172,18 @@ jobs:
 
           csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
           csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('/tmp/oversized.json').write_text('"' + ('x' * 1100000) + '"')
+          PY
+          oversized_code="$(curl -sS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/oversized.json \
+            -o /tmp/oversized-response.txt -w '%{http_code}' \
+            "$base/api/admin/products")"
+          test "$oversized_code" = "413"
 
           cat > /tmp/product.json <<'JSON'
           {
