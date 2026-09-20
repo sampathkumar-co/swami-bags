@@ -3,10 +3,13 @@ package com.swamibags.catalog.product;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,7 +59,7 @@ class ProductCatalogFlowIntegrationTest {
                 "files",
                 "bag.jpg",
                 "image/jpeg",
-                new byte[] {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9});
+                validJpegBytes());
 
         products.addOriginalImages(created.id(), List.of(image));
         Product published = products.setPublished(created.id(), true);
@@ -107,7 +110,7 @@ class ProductCatalogFlowIntegrationTest {
                         "files",
                         "bag-" + index + ".jpg",
                         "image/jpeg",
-                        new byte[] {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9}))
+                        validJpegBytes()))
                 .toList();
 
         products.addOriginalImages(created.id(), validImages);
@@ -117,11 +120,22 @@ class ProductCatalogFlowIntegrationTest {
                 "files",
                 "bag-7.jpg",
                 "image/jpeg",
-                new byte[] {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9});
+                validJpegBytes());
 
         assertThatThrownBy(() -> products.addOriginalImages(created.id(), List.of(seventh)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("at most 6");
+    }
+
+    private static byte[] validJpegBytes() {
+        try {
+            BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpeg", output);
+            return output.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static Path createTempDirectory() {
