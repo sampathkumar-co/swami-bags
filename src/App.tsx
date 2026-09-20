@@ -6,6 +6,7 @@ import AdminLogin from './admin/AdminLogin'
 import AdminProductEditor from './admin/AdminProductEditor'
 import AdminSettings from './admin/AdminSettings'
 import Layout from './components/Layout'
+import DocumentMeta from './components/DocumentMeta'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Home from './pages/Home'
@@ -15,7 +16,9 @@ import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <DocumentMeta />
+      <Routes>
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminGate />}>
         <Route element={<AdminLayout />}>
@@ -34,6 +37,7 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   )
 }
