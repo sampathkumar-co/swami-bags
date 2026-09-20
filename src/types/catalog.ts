@@ -30,4 +30,5 @@ export type PublicConfig = {
   businessEmail: string
   businessAddress: string
   publicBaseUrl: string
+  logoUrl: string
 }

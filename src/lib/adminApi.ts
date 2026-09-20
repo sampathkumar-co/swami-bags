@@ -134,4 +134,24 @@ export const adminApi = {
       body: JSON.stringify(payload),
     })
   },
+
+  uploadLogo(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return request<SiteSettings>('/api/admin/settings/logo', {
+      method: 'POST',
+      body: form,
+    })
+  },
+
+  deleteLogo() {
+    return request<SiteSettings>('/api/admin/settings/logo', { method: 'DELETE' })
+  },
+
+  changePassword(currentPassword: string, newPassword: string) {
+    return request<{ changed: boolean }>('/api/admin/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  },
 }

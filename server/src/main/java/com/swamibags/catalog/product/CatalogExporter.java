@@ -51,7 +51,8 @@ public class CatalogExporter {
                             publicSettings.businessPhone(),
                             publicSettings.businessEmail(),
                             publicSettings.businessAddress(),
-                            publicSettings.publicBaseUrl())));
+                            publicSettings.publicBaseUrl(),
+                            publicSettings.logoUrl())));
             writeAtomically(catalogDir.resolve("sitemap.xml"),
                     buildSitemap(publicSettings.publicBaseUrl(), products).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -153,6 +154,7 @@ public class CatalogExporter {
             String businessPhone,
             String businessEmail,
             String businessAddress,
-            String publicBaseUrl
+            String publicBaseUrl,
+            String logoUrl
     ) {}
 }

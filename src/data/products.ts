@@ -10,6 +10,7 @@ export const defaultPublicConfig: PublicConfig = {
   businessEmail: '',
   businessAddress: '',
   publicBaseUrl: '',
+  logoUrl: '',
 }
 
 export const fallbackProducts: CatalogProduct[] = [

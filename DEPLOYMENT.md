@@ -60,6 +60,8 @@ OPENAI_IMAGE_SIZE=1536x1024
 
 Never commit the real `.env`.
 
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` are bootstrap credentials for a fresh data volume. On first sign-in the password is stored as a BCrypt hash in private SQLite. After that, use **Admin → Settings → Admin password** to change it; the database value persists across container rebuilds and restarts. Changing `ADMIN_USERNAME` intentionally replaces the previously bootstrapped admin account on the next bootstrap.
+
 ## 3. Preflight and start
 
 Run the included preflight before the first deployment. It rejects unsafe placeholder admin credentials and validates the Compose configuration.
@@ -95,6 +97,7 @@ The intended first-product flow is:
 
 ```text
 Sign in
+→ Open Settings to upload the business logo and optionally change the admin password
 → Add product details
 → Save
 → Upload real product photos
@@ -175,7 +178,7 @@ The named data volume is not replaced by application rebuilds.
 These are environment/business inputs rather than missing application architecture:
 
 - final WhatsApp and phone numbers
-- logo and real product photographs
+- final logo file to upload in Admin → Settings and real product photographs
 - OpenAI API key
 - final domain / DNS
 - HTTPS termination

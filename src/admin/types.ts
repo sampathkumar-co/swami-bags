@@ -63,6 +63,7 @@ export type SiteSettings = {
   businessEmail: string
   businessAddress: string
   publicBaseUrl: string
+  logoUrl: string
 }
 
 export type AiGeneration = {

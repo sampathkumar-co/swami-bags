@@ -7,11 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
@@ -21,23 +18,6 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
-    }
-
-    @Bean
-    UserDetailsService userDetailsService(AppProperties properties, PasswordEncoder encoder) {
-        if (properties.adminUsername() == null || properties.adminUsername().isBlank()
-                || properties.adminPassword() == null || properties.adminPassword().length() < 12) {
-            throw new IllegalStateException("ADMIN_USERNAME and an ADMIN_PASSWORD of at least 12 characters are required.");
-        }
-        if (properties.adminPassword().toUpperCase(java.util.Locale.ROOT).contains("CHANGE_ME")) {
-            throw new IllegalStateException("Replace the placeholder ADMIN_PASSWORD before starting the server.");
-        }
-
-        var admin = User.withUsername(properties.adminUsername())
-                .password(encoder.encode(properties.adminPassword()))
-                .roles("ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(admin);
     }
 
     @Bean

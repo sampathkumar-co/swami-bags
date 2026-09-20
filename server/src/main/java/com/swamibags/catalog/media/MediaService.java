@@ -74,6 +74,46 @@ public class MediaService {
         return stored(target);
     }
 
+    public StoredMedia saveBrandLogo(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Select a logo image.");
+        }
+        if (file.getSize() > MAX_FILE_BYTES) {
+            throw new IllegalArgumentException("The logo image must be 10 MB or smaller.");
+        }
+
+        String declaredType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        if (!ALLOWED_TYPES.contains(declaredType)) {
+            throw new IllegalArgumentException("Only JPEG and PNG logo images are supported.");
+        }
+
+        DecodedImage decoded = decodeAndValidate(file, declaredType);
+        Path directory = mediaRoot.resolve("brand").normalize();
+        Files.createDirectories(directory);
+        SharedFilePermissions.makeDirectoryPublicReadable(directory);
+        Files.deleteIfExists(safeResolve(directory, "logo.jpg"));
+        Files.deleteIfExists(safeResolve(directory, "logo.png"));
+
+        Path target = safeResolve(directory, "logo" + decoded.extension());
+        boolean written = ImageIO.write(decoded.image(), decoded.format(), target.toFile());
+        if (!written) {
+            Files.deleteIfExists(target);
+            throw new IllegalArgumentException("The logo image could not be safely stored.");
+        }
+        SharedFilePermissions.makeFilePublicReadable(target);
+        return stored(target);
+    }
+
+    public void deleteBrandLogo() {
+        Path directory = mediaRoot.resolve("brand").normalize();
+        try {
+            Files.deleteIfExists(safeResolve(directory, "logo.jpg"));
+            Files.deleteIfExists(safeResolve(directory, "logo.png"));
+        } catch (IOException ignored) {
+            // Best effort removal; the public config is still cleared.
+        }
+    }
+
     public Path resolve(ProductImage image) {
         Path resolved = dataDir.resolve(image.path()).normalize();
         if (!resolved.startsWith(mediaRoot)) {

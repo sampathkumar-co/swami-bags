@@ -52,3 +52,9 @@ CREATE TABLE IF NOT EXISTS site_settings (
     setting_key TEXT PRIMARY KEY,
     setting_value TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS admin_credentials (
+    username TEXT PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);

@@ -24,7 +24,7 @@ export default function Layout() {
       <header className="header">
         <div className="container nav-wrap">
           <Link to="/" className="brand" onClick={() => setOpen(false)}>
-            <span className="brand-mark">NC</span>
+            <span className="brand-mark">{config.logoUrl ? <img src={config.logoUrl} alt="" /> : 'NC'}</span>
             <span>
               <strong>{config.brandName || 'New Chandra Bags'}</strong>
               <small>Bags for a brighter tomorrow</small>
@@ -58,7 +58,7 @@ export default function Layout() {
         <div className="container footer-grid">
           <div>
             <Link to="/" className="brand footer-brand">
-              <span className="brand-mark">NC</span>
+              <span className="brand-mark">{config.logoUrl ? <img src={config.logoUrl} alt="" /> : 'NC'}</span>
               <span>
                 <strong>{config.brandName || 'New Chandra Bags'}</strong>
                 <small>Wholesale bags for growing businesses</small>

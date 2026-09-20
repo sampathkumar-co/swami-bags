@@ -1,6 +1,10 @@
 package com.swamibags.catalog.product;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import com.swamibags.catalog.auth.AdminCredentialService;
+import com.swamibags.catalog.media.MediaService;
+import com.swamibags.catalog.settings.SiteSettingsRepository;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.awt.image.BufferedImage;
@@ -14,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -33,6 +38,21 @@ class ProductCatalogFlowIntegrationTest {
 
     @Autowired
     ProductService products;
+
+    @Autowired
+    MediaService media;
+
+    @Autowired
+    SiteSettingsRepository settings;
+
+    @Autowired
+    CatalogExporter exporter;
+
+    @Autowired
+    AdminCredentialService credentials;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @Test
     void productCanMoveFromDraftToPublishedStaticCatalog() throws Exception {
@@ -125,6 +145,46 @@ class ProductCatalogFlowIntegrationTest {
         assertThatThrownBy(() -> products.addOriginalImages(created.id(), List.of(seventh)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("at most 6");
+    }
+
+    @Test
+    void brandLogoIsStoredAndExportedToPublicConfig() throws Exception {
+        var logo = new MockMultipartFile(
+                "file",
+                "logo.jpg",
+                "image/jpeg",
+                validJpegBytes());
+
+        var stored = media.saveBrandLogo(logo);
+        settings.setLogoUrl(stored.publicUrl());
+        exporter.export();
+
+        assertThat(stored.publicUrl()).isEqualTo("/media/brand/logo.jpg");
+        assertThat(TEMP_DIR.resolve("media/brand/logo.jpg")).exists();
+        assertThat(Files.readString(TEMP_DIR.resolve("catalog/config.json")))
+                .contains("\"logoUrl\":\"/media/brand/logo.jpg\"");
+
+        media.deleteBrandLogo();
+        settings.setLogoUrl("");
+        exporter.export();
+        assertThat(TEMP_DIR.resolve("media/brand/logo.jpg")).doesNotExist();
+    }
+
+    @Test
+    void adminPasswordCanBeChangedAndPersistsInDatabase() {
+        credentials.ensureBootstrap();
+        assertThat(passwordEncoder.matches(
+                "integration-test-password",
+                credentials.loadUserByUsername("admin").getPassword())).isTrue();
+
+        credentials.changePassword(
+                "admin",
+                "integration-test-password",
+                "replacement-password-123");
+
+        String changedHash = credentials.loadUserByUsername("admin").getPassword();
+        assertThat(passwordEncoder.matches("replacement-password-123", changedHash)).isTrue();
+        assertThat(passwordEncoder.matches("integration-test-password", changedHash)).isFalse();
     }
 
     private static byte[] validJpegBytes() {

@@ -30,7 +30,8 @@ public class SiteSettingsRepository {
                 value(values, "businessPhone", defaults.businessPhone()),
                 value(values, "businessEmail", defaults.businessEmail()),
                 value(values, "businessAddress", defaults.businessAddress()),
-                value(values, "publicBaseUrl", defaults.publicBaseUrl()));
+                value(values, "publicBaseUrl", defaults.publicBaseUrl()),
+                value(values, "logoUrl", ""));
     }
 
     @Transactional
@@ -41,6 +42,12 @@ public class SiteSettingsRepository {
         upsert("businessEmail", clean(settings.businessEmail()));
         upsert("businessAddress", clean(settings.businessAddress()));
         upsert("publicBaseUrl", clean(settings.publicBaseUrl()));
+        return get();
+    }
+
+    @Transactional
+    public SiteSettings setLogoUrl(String logoUrl) {
+        upsert("logoUrl", clean(logoUrl));
         return get();
     }
 

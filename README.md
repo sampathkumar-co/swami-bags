@@ -26,6 +26,8 @@ A light, professional wholesale bag catalogue with a static-first public website
 - publish/unpublish products without editing source code
 - dashboard for product/publish/stock/image state
 - editable brand, WhatsApp, phone, email, address and public-site settings
+- upload/replace/remove the business logo directly from admin; it updates the public header/footer/favicon metadata without a rebuild
+- change the admin password from Settings; the BCrypt hash persists in the private SQLite database
 
 ### AI image workflow
 
@@ -94,7 +96,7 @@ The repository includes:
 The app is intentionally configured with placeholders for client-specific inputs. Before launch provide the real:
 
 - WhatsApp / phone number
-- logo / brand details if they change
+- final logo file (it can now be uploaded directly from Admin → Settings)
 - business address/email
 - product photos and product data
 - OpenAI API key

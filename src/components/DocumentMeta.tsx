@@ -53,6 +53,14 @@ export default function DocumentMeta() {
     upsertMeta('meta[property="og:title"]', 'property', 'og:title', title)
     upsertMeta('meta[property="og:description"]', 'property', 'og:description', description)
 
+    const icon = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (icon) icon.href = config.logoUrl || '/favicon.svg'
+    if (config.logoUrl) {
+      upsertMeta('meta[property="og:image"]', 'property', 'og:image', config.logoUrl)
+    } else {
+      document.head.querySelector('meta[property="og:image"]')?.remove()
+    }
+
     const base = config.publicBaseUrl?.replace(/\/$/, '')
     const canonicalHref = base && /^https?:\/\//i.test(base) ? `${base}${path === '/' ? '' : path}` : ''
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')

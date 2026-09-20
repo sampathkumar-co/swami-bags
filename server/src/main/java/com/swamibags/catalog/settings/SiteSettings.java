@@ -9,6 +9,7 @@ public record SiteSettings(
         @Size(max = 40) String businessPhone,
         @Size(max = 160) String businessEmail,
         @Size(max = 500) String businessAddress,
-        @Size(max = 240) String publicBaseUrl
+        @Size(max = 240) String publicBaseUrl,
+        @Size(max = 300) String logoUrl
 ) {
 }
