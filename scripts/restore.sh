@@ -30,7 +30,7 @@ if [ -z "$api_id" ]; then
   exit 1
 fi
 
-echo "This will replace the current Swami Bags database, media, and generated catalogue."
+echo "This will replace the current New Chandra Bags database, media, and generated catalogue."
 printf "Type RESTORE to continue: "
 read -r confirmation
 [ "$confirmation" = "RESTORE" ] || {

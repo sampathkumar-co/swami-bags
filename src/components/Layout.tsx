@@ -24,9 +24,9 @@ export default function Layout() {
       <header className="header">
         <div className="container nav-wrap">
           <Link to="/" className="brand" onClick={() => setOpen(false)}>
-            <span className="brand-mark">S</span>
+            <span className="brand-mark">NC</span>
             <span>
-              <strong>{config.brandName || 'Swami Bags'}</strong>
+              <strong>{config.brandName || 'New Chandra Bags'}</strong>
               <small>Bags for a brighter tomorrow</small>
             </span>
           </Link>
@@ -58,9 +58,9 @@ export default function Layout() {
         <div className="container footer-grid">
           <div>
             <Link to="/" className="brand footer-brand">
-              <span className="brand-mark">S</span>
+              <span className="brand-mark">NC</span>
               <span>
-                <strong>{config.brandName || 'Swami Bags'}</strong>
+                <strong>{config.brandName || 'New Chandra Bags'}</strong>
                 <small>Wholesale bags for growing businesses</small>
               </span>
             </Link>
@@ -88,7 +88,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="container footer-bottom">
-          <span>© {new Date().getFullYear()} {config.brandName || 'Swami Bags'}</span>
+          <span>© {new Date().getFullYear()} {config.brandName || 'New Chandra Bags'}</span>
           <span>Quality · Trust · Long-term partnerships</span>
         </div>
       </footer>

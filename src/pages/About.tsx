@@ -12,7 +12,7 @@ export default function About() {
       <section className="about-hero">
         <div className="container about-hero-grid">
           <div>
-            <span className="kicker">About {config.brandName || 'Swami Bags'}</span>
+            <span className="kicker">About {config.brandName || 'New Chandra Bags'}</span>
             <h1>Wholesale bags built around long-term business relationships.</h1>
             <p>We keep the buying experience straightforward: dependable products, clear quantities, transparent availability and direct communication.</p>
             <Link className="btn btn-primary btn-large" to="/products">Explore catalogue <ArrowRight size={18} /></Link>

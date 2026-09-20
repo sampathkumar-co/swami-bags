@@ -35,8 +35,8 @@ export default function AdminLogin() {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login-brand">
-          <span className="brand-mark">S</span>
-          <div><strong>Swami Bags</strong><small>Private catalogue admin</small></div>
+          <span className="brand-mark">NC</span>
+          <div><strong>New Chandra Bags</strong><small>Private catalogue admin</small></div>
         </div>
         <div className="admin-login-icon"><LockKeyhole /></div>
         <h1>Welcome back</h1>

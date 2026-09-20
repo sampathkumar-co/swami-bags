@@ -50,7 +50,7 @@ app:
   admin-username: ${ADMIN_USERNAME:}
   admin-password: ${ADMIN_PASSWORD:}
   data-dir: ${DATA_DIR:/data}
-  brand-name: ${BRAND_NAME:Swami Bags}
+  brand-name: ${BRAND_NAME:New Chandra Bags}
   whatsapp-number: ${WHATSAPP_NUMBER:}
   business-phone: ${BUSINESS_PHONE:}
   business-email: ${BUSINESS_EMAIL:}

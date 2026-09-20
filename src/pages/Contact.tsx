@@ -65,7 +65,7 @@ export default function Contact() {
         <aside className="contact-card">
           <div className="contact-card-head">
             <span className="brand-mark">S</span>
-            <div><strong>{config.brandName || 'Swami Bags'}</strong><small>Wholesale enquiries only</small></div>
+            <div><strong>{config.brandName || 'New Chandra Bags'}</strong><small>Wholesale enquiries only</small></div>
           </div>
           <div className="contact-row"><MessageCircle /><div><span>WhatsApp</span><strong>{config.whatsappNumber ? `+${config.whatsappNumber}` : 'Add number before launch'}</strong></div></div>
           <div className="contact-row"><Phone /><div><span>Phone</span><strong>{config.businessPhone || 'Add phone before launch'}</strong></div></div>

@@ -15,7 +15,7 @@
   <artifactId>swami-bags-server</artifactId>
   <version>1.0.0</version>
   <name>swami-bags-server</name>
-  <description>Private admin and AI image service for the Swami Bags static catalogue</description>
+  <description>Private admin and AI image service for the New Chandra Bags static catalogue</description>
 
   <properties>
     <java.version>21</java.version>

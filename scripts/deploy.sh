@@ -7,7 +7,7 @@ cd "$repo_dir"
 
 sh scripts/preflight.sh
 
-echo "Building Swami Bags production containers..."
+echo "Building New Chandra Bags production containers..."
 docker compose build
 
 echo "Starting production stack..."
@@ -17,7 +17,7 @@ echo "Waiting for public health endpoint..."
 attempt=1
 while [ "$attempt" -le 40 ]; do
   if curl -fsS "http://127.0.0.1:${WEB_PORT:-8088}/healthz" >/dev/null 2>&1; then
-    echo "Swami Bags is healthy."
+    echo "New Chandra Bags is healthy."
     docker compose ps
     exit 0
   fi

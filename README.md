@@ -1,4 +1,4 @@
-# Swami Bags
+# New Chandra Bags
 
 A light, professional wholesale bag catalogue with a static-first public website and a private Spring Boot admin workflow.
 

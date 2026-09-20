@@ -6,7 +6,7 @@ chmod 700 backups 2>/dev/null || true
 
 api_id="$(docker compose ps -q api)"
 if [ -z "$api_id" ]; then
-  echo "Swami Bags API container is not running."
+  echo "New Chandra Bags API container is not running."
   echo "Start the stack first with: docker compose up -d"
   exit 1
 fi

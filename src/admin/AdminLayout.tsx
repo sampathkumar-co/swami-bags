@@ -17,8 +17,8 @@ export default function AdminLayout() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link className="admin-brand" to="/admin">
-          <span className="brand-mark">S</span>
-          <span><strong>Swami Bags</strong><small>Catalogue admin</small></span>
+          <span className="brand-mark">NC</span>
+          <span><strong>New Chandra Bags</strong><small>Catalogue admin</small></span>
         </Link>
 
         <nav>

@@ -1,4 +1,4 @@
-# Swami Bags Security Audit
+# New Chandra Bags Security Audit
 
 Audit date: 2026-09-20
 

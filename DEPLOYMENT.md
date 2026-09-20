@@ -1,4 +1,4 @@
-# Swami Bags — VPS Deployment
+# New Chandra Bags — VPS Deployment
 
 The production design keeps public traffic lightweight:
 
@@ -45,7 +45,7 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=<long-random-password-that-is-not-the-placeholder>
 WHATSAPP_NUMBER=91XXXXXXXXXX
 BUSINESS_PHONE=+91 XXXXXXXXXX
-BRAND_NAME=Swami Bags
+BRAND_NAME=New Chandra Bags
 PUBLIC_BASE_URL=https://your-domain.example
 ```
 

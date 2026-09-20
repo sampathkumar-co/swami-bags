@@ -17,7 +17,7 @@ export default function DocumentMeta() {
   const { products, config } = useCatalog()
 
   useEffect(() => {
-    const brand = config.brandName || 'Swami Bags'
+    const brand = config.brandName || 'New Chandra Bags'
     const path = location.pathname
     const productSlug = path.startsWith('/products/') ? decodeURIComponent(path.slice('/products/'.length)) : ''
     const product = productSlug ? products.find((item) => item.slug === productSlug) : undefined

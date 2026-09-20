@@ -4,7 +4,7 @@ export const categories = ['All', 'Cash Bags', 'Luggage Bags', 'Jute Bags', 'Zip
 export const productCategories: ProductCategory[] = ['Cash Bags', 'Luggage Bags', 'Jute Bags', 'Zip Bags', 'Purses']
 
 export const defaultPublicConfig: PublicConfig = {
-  brandName: 'Swami Bags',
+  brandName: 'New Chandra Bags',
   whatsappNumber: '919876543210',
   businessPhone: '+91 98765 43210',
   businessEmail: '',

@@ -139,12 +139,12 @@ export default function Home() {
           <div className="story-image">
             {visualProducts[0]?.image
               ? <img src={visualProducts[0].image} alt="Wholesale bag supply" loading="lazy" />
-              : <div className="product-placeholder">Real Swami Bags product photography will appear here.</div>}
+              : <div className="product-placeholder">Real New Chandra Bags product photography will appear here.</div>}
           </div>
           <div className="story-copy">
             <span className="kicker">Built on trust</span>
             <h2>Simple wholesale. Clear information. Better business.</h2>
-            <p>{config.brandName || 'Swami Bags'} is designed around how wholesale buyers actually shop: they need the material, price, minimum order quantity, current stock and restock time without digging through clutter.</p>
+            <p>{config.brandName || 'New Chandra Bags'} is designed around how wholesale buyers actually shop: they need the material, price, minimum order quantity, current stock and restock time without digging through clutter.</p>
             <div className="story-stats">
               <div><strong>5+</strong><span>Core categories</span></div>
               <div><strong>100%</strong><span>Wholesale focused</span></div>

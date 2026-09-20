@@ -4,7 +4,7 @@ import { adminApi } from '../lib/adminApi'
 import type { SiteSettings } from './types'
 
 const emptySettings: SiteSettings = {
-  brandName: 'Swami Bags',
+  brandName: 'New Chandra Bags',
   whatsappNumber: '',
   businessPhone: '',
   businessEmail: '',
@@ -77,7 +77,7 @@ export default function AdminSettings() {
         <div className="admin-form-grid">
           <label className="span-2">
             <span>Brand name *</span>
-            <input required value={form.brandName} onChange={(e) => update('brandName', e.target.value)} placeholder="Swami Bags" />
+            <input required value={form.brandName} onChange={(e) => update('brandName', e.target.value)} placeholder="New Chandra Bags" />
           </label>
 
           <label>
