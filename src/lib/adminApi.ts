@@ -1,4 +1,4 @@
-import type { AdminImage, AdminProduct, Dashboard, ProductPayload } from '../admin/types'
+import type { AdminImage, AdminProduct, Dashboard, ProductPayload, SiteSettings } from '../admin/types'
 
 let csrfToken = ''
 
@@ -118,5 +118,16 @@ export const adminApi = {
 
   deleteProduct(id: string) {
     return request<void>(`/api/admin/products/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  },
+
+  settings() {
+    return request<SiteSettings>('/api/admin/settings')
+  },
+
+  updateSettings(payload: SiteSettings) {
+    return request<SiteSettings>('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
   },
 }

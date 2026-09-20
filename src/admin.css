@@ -263,3 +263,15 @@
   .admin-form-actions { align-items: stretch; flex-direction: column; }
   .admin-image-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+.admin-settings-panel { max-width: 920px; }
+.admin-form-grid label small {
+  margin-top: -2px;
+  color: var(--admin-muted);
+  font-size: .64rem;
+  line-height: 1.4;
+}
+.admin-settings-note {
+  color: var(--admin-muted);
+  font-size: .68rem;
+}

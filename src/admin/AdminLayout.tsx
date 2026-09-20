@@ -1,4 +1,4 @@
-import { Boxes, ExternalLink, LayoutDashboard, LogOut, Plus } from 'lucide-react'
+import { Boxes, ExternalLink, LayoutDashboard, LogOut, Plus, Settings } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { adminApi } from '../lib/adminApi'
 
@@ -24,6 +24,7 @@ export default function AdminLayout() {
         <nav>
           <NavLink end to="/admin"><LayoutDashboard size={18} /> Dashboard</NavLink>
           <NavLink to="/admin/products/new"><Plus size={18} /> Add product</NavLink>
+          <NavLink to="/admin/settings"><Settings size={18} /> Settings</NavLink>
           <a href="/" target="_blank" rel="noreferrer"><ExternalLink size={18} /> View website</a>
         </nav>
 

@@ -54,3 +54,13 @@ export type Dashboard = {
   images: number
   aiConfigured: boolean
 }
+
+
+export type SiteSettings = {
+  brandName: string
+  whatsappNumber: string
+  businessPhone: string
+  businessEmail: string
+  businessAddress: string
+  publicBaseUrl: string
+}

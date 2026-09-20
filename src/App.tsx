@@ -4,6 +4,7 @@ import AdminGate from './admin/AdminGate'
 import AdminLayout from './admin/AdminLayout'
 import AdminLogin from './admin/AdminLogin'
 import AdminProductEditor from './admin/AdminProductEditor'
+import AdminSettings from './admin/AdminSettings'
 import Layout from './components/Layout'
 import About from './pages/About'
 import Contact from './pages/Contact'
@@ -20,6 +21,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="products/new" element={<AdminProductEditor />} />
           <Route path="products/:id" element={<AdminProductEditor />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>
 
