@@ -17,7 +17,9 @@ Scope: React/Vite frontend, Spring Boot admin API, authentication/session handli
 - Product uploads are actually decoded, dimensions are bounded, and images are re-encoded before publication.
 - Public media paths are normalized and randomized.
 - Browser security headers/CSP, log rotation, backup and restore procedures are present.
-- CI actions are immutable-SHA pinned; npm audit, CodeQL and Dependabot provide continuing checks.
+- Unknown Spring routes are denied by default; only explicit health/auth/admin surfaces are reachable.
+- Large request bodies are permitted only on the authenticated image-upload route; ordinary API requests are capped at 1 MB.
+- CI actions are immutable-SHA pinned; npm audit, CodeQL, Trivy image scanning and Dependabot provide continuing checks.
 
 ## Findings remediated
 
@@ -33,10 +35,16 @@ Scope: React/Vite frontend, Spring Boot admin API, authentication/session handli
 10. API container read-only root FS, dropped Linux capabilities and no-new-privileges.
 11. CI checks security headers, auth cookie flags and malicious fake-image rejection.
 12. GitHub Actions upgraded/pinned; CodeQL and Dependabot added.
+13. Backup and restore helpers split into separate least-privilege containers; backup data is mounted read-only and restore backup input is read-only.
+14. Generic API request limits tightened and unknown Spring routes changed from permit-by-default to deny-by-default.
+15. CSP inline-style exception removed after verifying the frontend has no inline styles.
+16. Nginx upgraded to 1.30.5, Node build pinned to 22.23.2, Maven build to 3.9.16 and SQLite JDBC to 3.53.4.0.
+17. Embedded Tomcat overridden from Boot 4.0.8's vulnerable 11.0.24 to 11.0.26 after the August 2026 Tomcat advisories were identified.
+18. Production CI now scans both built images with Trivy and rejects HIGH/CRITICAL fixed vulnerabilities or high-severity embedded secrets.
 
 ## Live-only release gates
 
-Must be tested after the real VPS/domain exists: TLS certificate/redirect/ciphers, DNS and origin exposure, external port scan, firewall, SSH policy, OS/Docker patch level, CDN/WAF configuration, real `.env` permissions, backup restore drill, production security-header scan, live rate limiting behind the real proxy, and OpenAI billing/key-rotation controls.
+Must be tested after the real VPS/domain exists: TLS certificate/redirect/ciphers, DNS and origin exposure, external port scan, firewall, SSH policy, OS/Docker patch level, CDN/WAF configuration, real `.env` permissions, an off-VPS backup restore drill, production security-header scan, live rate limiting using the real client IP behind the outer proxy, HSTS/includeSubDomains suitability, and OpenAI billing/key-rotation controls.
 
 ## Repository governance gate
 
@@ -46,5 +54,4 @@ At audit time `main` was unprotected and no ruleset existed. Protect `main` and 
 
 - The web container receives the shared `/data` volume read-only, including SQLite; it is not URL-routable, but splitting private DB data from public catalog/media would further reduce blast radius.
 - One shared admin account is appropriate only for a single operator; multiple operators should get individual accounts, MFA and audit logging.
-- CSP still permits inline CSS for the current UI; scripts remain restricted to self.
 - Backup archives are not automatically encrypted; protect offsite copies appropriately.
