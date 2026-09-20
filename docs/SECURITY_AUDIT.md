@@ -41,6 +41,8 @@ Scope: React/Vite frontend, Spring Boot admin API, authentication/session handli
 16. Nginx upgraded to 1.30.5, Node build pinned to 22.23.2, Maven build to 3.9.16 and SQLite JDBC to 3.53.4.0.
 17. Embedded Tomcat overridden from Boot 4.0.8's vulnerable 11.0.24 to 11.0.26 after the August 2026 Tomcat advisories were identified.
 18. Production CI now scans both built images with Trivy and rejects HIGH/CRITICAL fixed vulnerabilities or high-severity embedded secrets.
+19. Production Node, Nginx, Maven and Temurin base images are pinned by immutable SHA-256 digest; the Alpine backup/restore helper is also digest-pinned.
+20. The web container drops all Linux capabilities and adds back only CHOWN, SETGID, SETUID and NET_BIND_SERVICE required by the official Nginx runtime.
 
 ## Live-only release gates
 
