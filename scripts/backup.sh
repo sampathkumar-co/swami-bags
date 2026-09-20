@@ -2,17 +2,12 @@
 set -eu
 
 mkdir -p backups
+chmod 700 backups 2>/dev/null || true
 
 api_id="$(docker compose ps -q api)"
 if [ -z "$api_id" ]; then
   echo "Swami Bags API container is not running."
   echo "Start the stack first with: docker compose up -d"
-  exit 1
-fi
-
-volume_name="$(docker inspect "$api_id" --format '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Name}}{{end}}{{end}}')"
-if [ -z "$volume_name" ]; then
-  echo "Could not determine the persistent /data volume."
   exit 1
 fi
 
@@ -26,13 +21,11 @@ restart_api() {
 }
 trap restart_api EXIT INT TERM
 
-docker run --rm \
-  -v "$volume_name:/data:ro" \
-  -v "$(pwd)/backups:/backup" \
-  alpine sh -c "tar czf /backup/$archive -C /data ."
+docker compose --profile ops run --rm -T -e "ARCHIVE=$archive" ops   sh -c 'tar czf "/backup/$ARCHIVE" -C /data .'
 
 docker compose start api >/dev/null
 trap - EXIT INT TERM
 
+chmod 600 "backups/$archive" 2>/dev/null || true
 echo "Backup written to backups/$archive"
 echo "The public Nginx catalogue remains available while the admin service is paused."
