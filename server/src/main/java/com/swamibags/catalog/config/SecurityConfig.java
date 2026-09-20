@@ -29,6 +29,9 @@ public class SecurityConfig {
                 || properties.adminPassword() == null || properties.adminPassword().length() < 12) {
             throw new IllegalStateException("ADMIN_USERNAME and an ADMIN_PASSWORD of at least 12 characters are required.");
         }
+        if (properties.adminPassword().toUpperCase(java.util.Locale.ROOT).contains("CHANGE_ME")) {
+            throw new IllegalStateException("Replace the placeholder ADMIN_PASSWORD before starting the server.");
+        }
 
         var admin = User.withUsername(properties.adminUsername())
                 .password(encoder.encode(properties.adminPassword()))

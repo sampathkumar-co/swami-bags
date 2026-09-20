@@ -41,7 +41,7 @@ Before launch, set at minimum:
 
 ```dotenv
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=<long-random-password>
+ADMIN_PASSWORD=<long-random-password-that-is-not-the-placeholder>
 WHATSAPP_NUMBER=91XXXXXXXXXX
 BUSINESS_PHONE=+91 XXXXXXXXXX
 BRAND_NAME=Swami Bags
@@ -97,8 +97,8 @@ Sign in
 → Add product details
 → Save
 → Upload real product photos
-→ Generate AI marketing image
-→ Review
+→ AI marketing draft generates automatically when the API key is configured
+→ Review / regenerate if needed
 → Approve
 → Publish
 → Public /catalog/products.json updates automatically
@@ -131,23 +131,13 @@ The SQLite database uses a single Hikari connection to keep resource use low.
 
 ## 7. Backup
 
-First find the exact Compose volume name:
+A backup script is included. It briefly pauses only the private API so the SQLite snapshot is consistent; Nginx keeps serving the public catalogue and images.
 
 ```bash
-docker volume ls | grep swami
+sh scripts/backup.sh
 ```
 
-Then back it up, replacing `VOLUME_NAME`:
-
-```bash
-mkdir -p backups
-docker run --rm \
-  -v VOLUME_NAME:/data:ro \
-  -v "$PWD/backups:/backup" \
-  alpine sh -c 'tar czf /backup/swami-data-$(date +%Y%m%d-%H%M%S).tgz -C /data .'
-```
-
-Keep periodic copies off the VPS as well.
+Archives are written to `./backups/`. Copy important backups off the VPS as well.
 
 ## 8. Updating production
 

@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   api:
     build:
@@ -25,6 +31,7 @@ services:
     expose:
       - "8080"
     mem_limit: 384m
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
       interval: 30s
@@ -44,6 +51,7 @@ services:
     volumes:
       - swami-data:/data:ro
     mem_limit: 96m
+    logging: *default-logging
 
 volumes:
   swami-data:
