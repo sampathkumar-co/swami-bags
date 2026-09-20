@@ -1,6 +1,7 @@
 package com.swamibags.catalog.product;
 
 import com.swamibags.catalog.config.AppProperties;
+import com.swamibags.catalog.settings.SiteSettingsRepository;
 import com.swamibags.catalog.media.SharedFilePermissions;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,12 +18,14 @@ import tools.jackson.databind.json.JsonMapper;
 public class CatalogExporter {
     private final ProductRepository repository;
     private final AppProperties properties;
+    private final SiteSettingsRepository settings;
     private final JsonMapper json;
     private final Path catalogDir;
 
-    public CatalogExporter(ProductRepository repository, AppProperties properties, JsonMapper json) throws IOException {
+    public CatalogExporter(ProductRepository repository, AppProperties properties, SiteSettingsRepository settings, JsonMapper json) throws IOException {
         this.repository = repository;
         this.properties = properties;
+        this.settings = settings;
         this.json = json;
         this.catalogDir = properties.dataDir().toAbsolutePath().normalize().resolve("catalog");
         Files.createDirectories(catalogDir);
@@ -39,14 +42,15 @@ public class CatalogExporter {
             List<CatalogProduct> products = repository.findPublished().stream().map(this::toCatalogProduct).toList();
             writeAtomically(catalogDir.resolve("products.json"),
                     json.writeValueAsBytes(new CatalogSnapshot(Instant.now().toString(), products)));
+            var publicSettings = settings.get();
             writeAtomically(catalogDir.resolve("config.json"),
                     json.writeValueAsBytes(new PublicConfig(
-                            properties.brandName(),
-                            properties.whatsappNumber(),
-                            properties.businessPhone(),
-                            properties.businessEmail(),
-                            properties.businessAddress(),
-                            properties.publicBaseUrl())));
+                            publicSettings.brandName(),
+                            publicSettings.whatsappNumber(),
+                            publicSettings.businessPhone(),
+                            publicSettings.businessEmail(),
+                            publicSettings.businessAddress(),
+                            publicSettings.publicBaseUrl())));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to export public catalogue.", e);
         }

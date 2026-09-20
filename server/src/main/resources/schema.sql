@@ -46,3 +46,9 @@ CREATE INDEX IF NOT EXISTS idx_products_published ON products(published);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id, kind, sort_order);
 CREATE INDEX IF NOT EXISTS idx_ai_generations_product ON ai_generations(product_id, created_at);
+
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    setting_key TEXT PRIMARY KEY,
+    setting_value TEXT NOT NULL DEFAULT ''
+);
