@@ -14,16 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
 
       - name: Install
         run: npm ci
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
 
       - name: Lint
         run: npm run lint
@@ -39,10 +42,10 @@ jobs:
         working-directory: server
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: "21"
@@ -57,12 +60,13 @@ jobs:
     needs: [frontend, server]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Prepare runtime environment
         run: |
           cp .env.example .env
           sed -i 's/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=ci-test-password-12345/' .env
+          sed -i 's/^SESSION_COOKIE_SECURE=.*/SESSION_COOKIE_SECURE=false/' .env
 
       - name: Validate operations scripts and Compose
         run: |
@@ -92,6 +96,20 @@ jobs:
           docker compose logs --tail=200
           exit 1
 
+      - name: Verify browser security headers
+        run: |
+          set -euo pipefail
+          headers="$(curl -fsSI http://127.0.0.1:8088/)"
+          grep -qi '^X-Content-Type-Options: nosniff' <<< "$headers"
+          grep -qi '^X-Frame-Options: DENY' <<< "$headers"
+          grep -qi '^Content-Security-Policy:' <<< "$headers"
+          grep -qi '^Referrer-Policy: strict-origin-when-cross-origin' <<< "$headers"
+          grep -qi '^Strict-Transport-Security:' <<< "$headers"
+
+          catalog_headers="$(curl -fsSI http://127.0.0.1:8088/catalog/products.json)"
+          grep -qi '^X-Content-Type-Options: nosniff' <<< "$catalog_headers"
+          grep -qi '^Content-Security-Policy:' <<< "$catalog_headers"
+
       - name: Verify protected admin endpoint
         run: |
           code="$(curl -sS -o /tmp/admin-response.json -w '%{http_code}' http://127.0.0.1:8088/api/admin/dashboard)"
@@ -103,10 +121,11 @@ jobs:
           base="http://127.0.0.1:8088"
           cookies="/tmp/swami-cookies.txt"
 
-          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf_json="$(curl -fsS -D /tmp/csrf-headers.txt -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
           csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+          grep -qi 'Set-Cookie: XSRF-TOKEN=.*HttpOnly.*SameSite=Strict' /tmp/csrf-headers.txt
 
-          curl -fsS -c "$cookies" -b "$cookies" \
+          curl -fsS -D /tmp/login-headers.txt -c "$cookies" -b "$cookies" \
             -H "X-XSRF-TOKEN: $csrf" \
             -H "Content-Type: application/x-www-form-urlencoded" \
             --data-urlencode "username=admin" \
@@ -114,6 +133,7 @@ jobs:
             "$base/api/admin/auth/login" > /tmp/login.json
 
           grep -q '"authenticated":true' /tmp/login.json
+          grep -qi 'Set-Cookie: SWAMI_ADMIN_SESSION=.*HttpOnly.*SameSite=Strict' /tmp/login-headers.txt
 
           csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
           csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
@@ -150,6 +170,14 @@ jobs:
             -o /tmp/publish-before-image.json -w '%{http_code}' \
             "$base/api/admin/products/SB-CI-01/publish")"
           test "$code" = "400"
+
+          printf 'not-a-real-png' > /tmp/fake.png
+          fake_code="$(curl -sS -c "$cookies" -b "$cookies" \
+            -H "X-XSRF-TOKEN: $csrf" \
+            -F "files=@/tmp/fake.png;type=image/png" \
+            -o /tmp/fake-upload.json -w '%{http_code}' \
+            "$base/api/admin/products/SB-CI-01/images")"
+          test "$fake_code" = "400"
 
           printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
             | base64 --decode > /tmp/bag.png
