@@ -1,7 +1,12 @@
 node_modules
 dist
+dist-ssr
 .git
-.gitignore
+.github
+.env
+.env.*
+data
+server
 *.log
 *.png
 !public/**/*.png
