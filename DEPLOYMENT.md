@@ -34,6 +34,7 @@ The deployment only exposes the Nginx/web port. The Spring Boot service stays in
 git clone https://github.com/sampathkumar-co/swami-bags.git
 cd swami-bags
 cp .env.example .env
+chmod 600 .env
 nano .env
 ```
 
@@ -70,13 +71,9 @@ sh scripts/deploy.sh
 
 The deploy script builds the containers, starts the stack, waits for the public health endpoint and prints container status.
 
-Default public port:
+By default the web container binds only to `127.0.0.1:8088`. Keep this loopback binding and have the host reverse proxy or trusted edge terminate public HTTPS. Do not expose port 8088 directly to the internet.
 
-```text
-http://VPS-IP:8088
-```
-
-Change `WEB_PORT` in `.env` if required.
+Change `WEB_PORT` only if the local reverse proxy needs another origin port.
 
 ## 4. Verify
 
@@ -110,16 +107,15 @@ Sign in
 
 ## 5. HTTPS / domain
 
-When a real domain is connected, terminate HTTPS at the existing reverse proxy or Cloudflare setup and forward to the web container.
-
-After HTTPS is working set:
+When a real domain is connected, terminate HTTPS at the host reverse proxy or trusted edge and forward to `127.0.0.1:8088`. Production defaults already require Secure cookies:
 
 ```dotenv
+WEB_BIND_ADDRESS=127.0.0.1
 SESSION_COOKIE_SECURE=true
 PUBLIC_BASE_URL=https://your-domain.example
 ```
 
-Do not expose the Spring Boot container directly to the internet.
+Use `SESSION_COOKIE_SECURE=false` only for an isolated local HTTP test. Do not expose the Spring Boot container directly to the internet.
 
 ## 6. Persistent data
 
@@ -141,7 +137,7 @@ A backup script is included. It briefly pauses only the private API so the SQLit
 sh scripts/backup.sh
 ```
 
-Archives are written to `./backups/`. Copy important backups off the VPS as well.
+Archives are written to `./backups/`. Copy important backups off the VPS, protect offsite copies with access controls/encryption, and periodically prove that a backup can actually be restored.
 
 To restore a backup during maintenance:
 
@@ -151,7 +147,20 @@ sh scripts/restore.sh backups/swami-data-YYYYMMDD-HHMMSS.tgz
 
 The restore script requires typing `RESTORE` before it replaces the live persistent data.
 
-## 8. Updating production
+## 8. Host security gate
+
+Before public launch:
+
+- expose only required firewall ports (normally SSH plus 80/443 at the outer proxy)
+- use SSH keys and disable password/root SSH login where your host permits it
+- keep the OS, Docker Engine and reverse proxy patched
+- keep the real `.env` at mode 600
+- keep `WEB_BIND_ADDRESS=127.0.0.1`
+- set OpenAI billing/usage alerts and rotate a key immediately after suspected exposure
+- enable GitHub protection for `main` and require CI + CodeQL
+- run an external port scan and HTTPS/security-header scan after DNS is live
+
+## 9. Updating production
 
 ```bash
 git pull --ff-only
@@ -161,7 +170,7 @@ docker image prune -f
 
 The named data volume is not replaced by application rebuilds.
 
-## 9. Things intentionally left for final deployment
+## 10. Things intentionally left for final deployment
 
 These are environment/business inputs rather than missing application architecture:
 

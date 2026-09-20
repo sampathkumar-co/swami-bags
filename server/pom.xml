@@ -19,6 +19,7 @@
 
   <properties>
     <java.version>21</java.version>
+    <tomcat.version>11.0.26</tomcat.version>
   </properties>
 
   <dependencies>
@@ -45,7 +46,7 @@
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
-      <version>3.50.3.0</version>
+      <version>3.53.4.0</version>
     </dependency>
 
     <dependency>

@@ -22,6 +22,8 @@ data/
 *.db
 *.db-shm
 *.db-wal
+backups/
+*.tgz
 
 # Editor / OS
 .vscode/*

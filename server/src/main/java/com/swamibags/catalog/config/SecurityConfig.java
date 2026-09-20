@@ -20,7 +20,7 @@ public class SecurityConfig {
 
     @Bean
     PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12);
     }
 
     @Bean
@@ -47,18 +47,21 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        var csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        var csrf = new CookieCsrfTokenRepository();
         csrf.setCookiePath("/");
         csrf.setCookieName("XSRF-TOKEN");
         csrf.setHeaderName("X-XSRF-TOKEN");
+        csrf.setCookieCustomizer(cookie -> cookie.httpOnly(true).sameSite("Strict"));
 
         http
                 .csrf(configurer -> configurer.csrfTokenRepository(csrf))
+                .requestCache(cache -> cache.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/admin/auth/csrf", "/api/admin/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().permitAll())
+                        .anyRequest().denyAll())
+                .sessionManagement(session -> session.sessionFixation(fixation -> fixation.migrateSession()))
                 .formLogin(login -> login
                         .loginProcessingUrl("/api/admin/auth/login")
                         .successHandler((request, response, authentication) ->
@@ -74,7 +77,7 @@ public class SecurityConfig {
                                 writeJson(response, HttpServletResponse.SC_OK, "{\"authenticated\":false}"))
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID"))
+                        .deleteCookies("SWAMI_ADMIN_SESSION", "JSESSIONID", "XSRF-TOKEN"))
                 .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, exception) ->
                         writeJson(response, HttpServletResponse.SC_UNAUTHORIZED,
                                 "{\"message\":\"Authentication required\"}")));
