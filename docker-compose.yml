@@ -64,15 +64,30 @@ services:
       - no-new-privileges:true
     logging: *default-logging
 
-  ops:
+  backup-ops:
     image: alpine:3.24.2
     profiles: ["ops"]
+    user: "${OPS_UID:-0}:${OPS_GID:-0}"
     volumes:
-      - swami-data:/data
+      - swami-data:/data:ro
       - ./backups:/backup
     pids_limit: 64
     cap_drop:
       - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  restore-ops:
+    image: alpine:3.24.2
+    profiles: ["ops"]
+    volumes:
+      - swami-data:/data
+      - ./backups:/backup:ro
+    pids_limit: 64
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
     security_opt:
       - no-new-privileges:true
 

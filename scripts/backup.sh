@@ -21,7 +21,9 @@ restart_api() {
 }
 trap restart_api EXIT INT TERM
 
-docker compose --profile ops run --rm -T -e "ARCHIVE=$archive" ops   sh -c 'tar czf "/backup/$ARCHIVE" -C /data .'
+OPS_UID="$(id -u)" OPS_GID="$(id -g)" docker compose --profile ops run --rm -T \
+  -e "ARCHIVE=$archive" backup-ops \
+  sh -c 'tar czf "/backup/$ARCHIVE" -C /data .'
 
 docker compose start api >/dev/null
 trap - EXIT INT TERM

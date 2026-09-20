@@ -41,7 +41,9 @@ read -r confirmation
 echo "Stopping the stack for a consistent restore..."
 docker compose stop
 
-docker compose --profile ops run --rm -T -e "ARCHIVE=$archive_name" ops   sh -c 'rm -rf /data/* /data/.[!.]* /data/..?* 2>/dev/null || true; tar xzf "/backup/$ARCHIVE" -C /data'
+docker compose --profile ops run --rm -T \
+  -e "ARCHIVE=$archive_name" restore-ops \
+  sh -c 'rm -rf /data/* /data/.[!.]* /data/..?* 2>/dev/null || true; tar xzf "/backup/$ARCHIVE" -C /data'
 
 echo "Starting restored stack..."
 docker compose start
