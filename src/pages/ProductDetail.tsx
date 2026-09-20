@@ -1,20 +1,43 @@
 import { ArrowLeft, Check, MessageCircle, Minus, PackageCheck, Plus, ShieldCheck, Truck } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { products, whatsappNumber } from '../data/products'
+import { useCatalog } from '../context/CatalogContext'
+import { whatsappUrl } from '../lib/whatsapp'
 
 export default function ProductDetail() {
   const { slug } = useParams()
+  const { products, config, loading } = useCatalog()
   const product = products.find((item) => item.slug === slug)
-  const [quantity, setQuantity] = useState(product?.moq ?? 1)
+  const [quantity, setQuantity] = useState(1)
+
+  useEffect(() => {
+    if (product) setQuantity(product.moq)
+  }, [product])
+
+  const enquiryHref = useMemo(() => {
+    if (!product) return '/contact'
+    const requested = Math.max(product.moq, quantity || product.moq)
+    const message = [
+      `Hello, I'm interested in ${product.name} (${product.id}).`,
+      `Material: ${product.material}`,
+      `Required quantity: ${requested} pieces`,
+      `Listed wholesale price: ₹${product.price} / ${product.priceUnit || 'piece'}`,
+      'Please confirm current availability, final bulk pricing and dispatch time. Thank you.',
+    ].join('\n')
+    return whatsappUrl(config.whatsappNumber, message)
+  }, [product, quantity, config.whatsappNumber])
+
+  if (loading) {
+    return <section className="page-section"><div className="container empty-state"><p>Loading product…</p></div></section>
+  }
 
   if (!product) {
     return (
       <section className="page-section">
         <div className="container empty-state">
           <h1>Product not found</h1>
-          <p>The product may have moved or is no longer listed.</p>
+          <p>The product may have moved or is not currently published.</p>
           <Link className="btn btn-primary" to="/products">Back to catalogue</Link>
         </div>
       </section>
@@ -22,16 +45,8 @@ export default function ProductDetail() {
   }
 
   const quantityStep = Math.max(1, Math.round(product.moq / 5))
-  const normalizedQuantity = Math.max(product.moq, quantity || product.moq)
-  const message = [
-    `Hello, I'm interested in ${product.name} (${product.id}).`,
-    `Material: ${product.material}`,
-    `Required quantity: ${normalizedQuantity} pieces`,
-    `Listed wholesale price: ₹${product.price} / piece`,
-    'Please confirm current availability, final bulk pricing and dispatch time. Thank you.'
-  ].join('\n')
-  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 3)
+  const gallery = product.images.length ? product.images : product.image ? [product.image] : []
 
   return (
     <>
@@ -41,15 +56,17 @@ export default function ProductDetail() {
           <div className="product-detail-grid">
             <div className="detail-gallery">
               <div className="detail-main-image">
-                <img src={product.image} alt={product.name} />
+                {product.image ? <img src={product.image} alt={product.name} /> : <div className="product-placeholder">Image coming soon</div>}
               </div>
-              <div className="detail-thumbs">
-                {[0, 1, 2, 3].map((index) => (
-                  <button key={index} aria-label={`Product view ${index + 1}`}>
-                    <img src={product.image} alt="" />
-                  </button>
-                ))}
-              </div>
+              {gallery.length > 1 && (
+                <div className="detail-thumbs">
+                  {gallery.slice(0, 4).map((image, index) => (
+                    <button key={image + index} aria-label={`Product view ${index + 1}`}>
+                      <img src={image} alt="" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="detail-content">
@@ -64,7 +81,7 @@ export default function ProductDetail() {
                 </span>
               </div>
 
-              <div className="detail-price"><strong>₹{product.price}</strong><span>/ piece</span></div>
+              <div className="detail-price"><strong>₹{product.price}</strong><span>/ {product.priceUnit || 'piece'}</span></div>
               <p className="detail-description">{product.description}</p>
 
               <div className="spec-table">
@@ -72,7 +89,7 @@ export default function ProductDetail() {
                 <div><span>Minimum order</span><strong>{product.moq} pieces</strong></div>
                 <div><span>Available quantity</span><strong>{product.stock > 0 ? `${product.stock} pieces` : 'Currently unavailable'}</strong></div>
                 <div><span>Restock time</span><strong>{product.stock > 0 ? 'Regular supply' : `Approx. ${product.restockDays ?? 7} days`}</strong></div>
-                <div><span>Size</span><strong>{product.size}</strong></div>
+                <div><span>Size</span><strong>{product.size || 'On enquiry'}</strong></div>
               </div>
 
               <div className="quantity-enquiry">
@@ -81,10 +98,7 @@ export default function ProductDetail() {
                   <small>MOQ {product.moq} pieces</small>
                 </div>
                 <div className="quantity-control">
-                  <button
-                    aria-label="Decrease quantity"
-                    onClick={() => setQuantity((value) => Math.max(product.moq, value - quantityStep))}
-                  >
+                  <button aria-label="Decrease quantity" onClick={() => setQuantity((value) => Math.max(product.moq, value - quantityStep))}>
                     <Minus size={16} />
                   </button>
                   <input
@@ -101,11 +115,11 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <a className="btn btn-whatsapp btn-large btn-full" href={whatsappHref} target="_blank" rel="noreferrer">
+              <a className="btn btn-whatsapp btn-large btn-full" href={enquiryHref}>
                 <MessageCircle size={19} />
                 Enquire on WhatsApp
               </a>
-              <small className="helper-text">Your product, material and requested quantity are added to the message automatically.</small>
+              <small className="helper-text">Product, material and requested quantity are added to the message automatically.</small>
             </div>
           </div>
         </div>
@@ -136,12 +150,8 @@ export default function ProductDetail() {
       {related.length > 0 && (
         <section className="section section-soft">
           <div className="container">
-            <div className="section-heading">
-              <div><span className="kicker">More options</span><h2>Related products</h2></div>
-            </div>
-            <div className="product-grid related-grid">
-              {related.map((item) => <ProductCard key={item.id} product={item} />)}
-            </div>
+            <div className="section-heading"><div><span className="kicker">More options</span><h2>Related products</h2></div></div>
+            <div className="product-grid related-grid">{related.map((item) => <ProductCard key={item.id} product={item} />)}</div>
           </div>
         </section>
       )}

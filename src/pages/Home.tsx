@@ -1,7 +1,9 @@
-import { ArrowRight, Boxes, PackageCheck, ShieldCheck, Truck, MessageCircle } from 'lucide-react'
+import { ArrowRight, Boxes, MessageCircle, PackageCheck, ShieldCheck, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { featuredProducts, products, whatsappNumber } from '../data/products'
+import { useCatalog } from '../context/CatalogContext'
+import { fallbackProducts } from '../data/products'
+import { whatsappUrl } from '../lib/whatsapp'
 
 const categoryVisuals = [
   ['Cash Bags', 'Secure · Durable · Reliable'],
@@ -12,7 +14,13 @@ const categoryVisuals = [
 ]
 
 export default function Home() {
-  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hello, I would like to enquire about your wholesale bag range.')}`
+  const { products, config, loading, usingFallback } = useCatalog()
+  const featured = products.slice(0, 4)
+  const visualProducts = products.length ? products : fallbackProducts
+  const enquiryHref = whatsappUrl(
+    config.whatsappNumber,
+    'Hello, I would like to enquire about your wholesale bag range.',
+  )
 
   return (
     <>
@@ -26,7 +34,7 @@ export default function Home() {
               <Link className="btn btn-primary btn-large" to="/products">
                 View catalogue <ArrowRight size={18} />
               </Link>
-              <a className="btn btn-secondary btn-large" href={whatsappHref} target="_blank" rel="noreferrer">
+              <a className="btn btn-secondary btn-large" href={enquiryHref}>
                 <MessageCircle size={18} />
                 Wholesale enquiry
               </a>
@@ -40,14 +48,14 @@ export default function Home() {
 
           <div className="hero-showcase" aria-label="Featured wholesale bags">
             <div className="hero-card hero-card-main">
-              <img src={products[2].image} alt="Jute wholesale bag" />
+              <img src={visualProducts[2]?.image || fallbackProducts[2].image} alt="Jute wholesale bag" />
               <span>Better materials.<br />Brighter business.</span>
             </div>
             <div className="hero-card hero-card-top">
-              <img src={products[1].image} alt="Travel bag" />
+              <img src={visualProducts[1]?.image || fallbackProducts[1].image} alt="Travel bag" />
             </div>
             <div className="hero-card hero-card-bottom">
-              <img src={products[4].image} alt="Ladies purse" />
+              <img src={visualProducts[4]?.image || fallbackProducts[4].image} alt="Ladies purse" />
             </div>
             <span className="script-note">More than bags — business carried forward.</span>
           </div>
@@ -75,10 +83,10 @@ export default function Home() {
           </div>
           <div className="category-grid">
             {categoryVisuals.map(([name, subtitle], index) => {
-              const sample = products.find((item) => item.category === name) ?? products[index]
+              const sample = products.find((item) => item.category === name) ?? fallbackProducts[index]
               return (
                 <Link key={name} to={`/products?category=${encodeURIComponent(name)}`} className="category-card">
-                  <div className="category-image"><img src={sample.image} alt="" loading="lazy" /></div>
+                  <div className="category-image"><img src={sample?.image || fallbackProducts[0].image} alt="" loading="lazy" /></div>
                   <strong>{name}</strong>
                   <span>{subtitle}</span>
                   <i><ArrowRight size={15} /></i>
@@ -95,24 +103,36 @@ export default function Home() {
             <div>
               <span className="kicker">Popular wholesale choices</span>
               <h2>Featured products</h2>
+              {usingFallback && <p>Demo catalogue shown until the server catalogue is published.</p>}
             </div>
             <Link className="text-link" to="/products">Full catalogue <ArrowRight size={16} /></Link>
           </div>
-          <div className="product-grid">
-            {featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
-          </div>
+
+          {loading ? (
+            <div className="empty-state"><p>Loading catalogue…</p></div>
+          ) : featured.length > 0 ? (
+            <div className="product-grid">
+              {featured.map((product) => <ProductCard key={product.id} product={product} />)}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h2>Catalogue is being prepared</h2>
+              <p>Products will appear here as soon as they are published from the private admin panel.</p>
+              <Link className="btn btn-primary" to="/contact">Send a wholesale enquiry</Link>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="section">
         <div className="container story-panel">
           <div className="story-image">
-            <img src={products[0].image} alt="Wholesale bag manufacturing and supply" loading="lazy" />
+            <img src={visualProducts[0]?.image || fallbackProducts[0].image} alt="Wholesale bag supply" loading="lazy" />
           </div>
           <div className="story-copy">
             <span className="kicker">Built on trust</span>
             <h2>Simple wholesale. Clear information. Better business.</h2>
-            <p>Swami Bags is designed around how wholesale buyers actually shop: they need the material, price, minimum order quantity, current stock and restock time without digging through clutter.</p>
+            <p>{config.brandName || 'Swami Bags'} is designed around how wholesale buyers actually shop: they need the material, price, minimum order quantity, current stock and restock time without digging through clutter.</p>
             <div className="story-stats">
               <div><strong>5+</strong><span>Core categories</span></div>
               <div><strong>100%</strong><span>Wholesale focused</span></div>
@@ -130,7 +150,7 @@ export default function Home() {
             <h2>Need pricing for a larger quantity?</h2>
             <p>Send the product and quantity directly on WhatsApp. No cart, no checkout, no unnecessary steps.</p>
           </div>
-          <a className="btn btn-light btn-large" href={whatsappHref} target="_blank" rel="noreferrer">
+          <a className="btn btn-light btn-large" href={enquiryHref}>
             <MessageCircle size={18} />
             Start an enquiry
           </a>

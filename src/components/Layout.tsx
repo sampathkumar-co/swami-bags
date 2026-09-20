@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu, MessageCircle, X } from 'lucide-react'
-import { whatsappNumber } from '../data/products'
+import { useCatalog } from '../context/CatalogContext'
+import { whatsappUrl } from '../lib/whatsapp'
 
 const navItems = [
   ['Home', '/'],
@@ -12,7 +13,11 @@ const navItems = [
 
 export default function Layout() {
   const [open, setOpen] = useState(false)
-  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hello, I would like to know more about your wholesale bag catalogue.')}`
+  const { config } = useCatalog()
+  const enquiryHref = whatsappUrl(
+    config.whatsappNumber,
+    'Hello, I would like to know more about your wholesale bag catalogue.',
+  )
 
   return (
     <div className="site-shell">
@@ -21,7 +26,7 @@ export default function Layout() {
           <Link to="/" className="brand" onClick={() => setOpen(false)}>
             <span className="brand-mark">S</span>
             <span>
-              <strong>Swami Bags</strong>
+              <strong>{config.brandName || 'Swami Bags'}</strong>
               <small>Bags for a brighter tomorrow</small>
             </span>
           </Link>
@@ -34,7 +39,7 @@ export default function Layout() {
             ))}
           </nav>
 
-          <a className="btn btn-primary nav-cta" href={whatsappHref} target="_blank" rel="noreferrer">
+          <a className="btn btn-primary nav-cta" href={enquiryHref}>
             <MessageCircle size={17} />
             Enquire on WhatsApp
           </a>
@@ -55,7 +60,7 @@ export default function Layout() {
             <Link to="/" className="brand footer-brand">
               <span className="brand-mark">S</span>
               <span>
-                <strong>Swami Bags</strong>
+                <strong>{config.brandName || 'Swami Bags'}</strong>
                 <small>Wholesale bags for growing businesses</small>
               </span>
             </Link>
@@ -77,13 +82,13 @@ export default function Layout() {
           </div>
           <div>
             <h4>Wholesale enquiries</h4>
-            <a href={whatsappHref} target="_blank" rel="noreferrer">WhatsApp us</a>
-            <span>Pan India supply</span>
+            <a href={enquiryHref}>WhatsApp us</a>
+            {config.businessPhone && <span>{config.businessPhone}</span>}
             <span>Bulk orders welcome</span>
           </div>
         </div>
         <div className="container footer-bottom">
-          <span>© {new Date().getFullYear()} Swami Bags</span>
+          <span>© {new Date().getFullYear()} {config.brandName || 'Swami Bags'}</span>
           <span>Quality · Trust · Long-term partnerships</span>
         </div>
       </footer>

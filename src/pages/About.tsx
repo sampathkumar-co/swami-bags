@@ -1,20 +1,24 @@
 import { ArrowRight, Boxes, Handshake, ShieldCheck, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/products'
+import { useCatalog } from '../context/CatalogContext'
+import { fallbackProducts } from '../data/products'
 
 export default function About() {
+  const { products, config } = useCatalog()
+  const visuals = products.length ? products : fallbackProducts
+
   return (
     <>
       <section className="about-hero">
         <div className="container about-hero-grid">
           <div>
-            <span className="kicker">About Swami Bags</span>
+            <span className="kicker">About {config.brandName || 'Swami Bags'}</span>
             <h1>Wholesale bags built around long-term business relationships.</h1>
             <p>We keep the buying experience straightforward: dependable products, clear quantities, transparent availability and direct communication.</p>
             <Link className="btn btn-primary btn-large" to="/products">Explore catalogue <ArrowRight size={18} /></Link>
           </div>
           <div className="about-visual">
-            <img src={products[2].image} alt="Swami Bags wholesale range" />
+            <img src={visuals[2]?.image || fallbackProducts[2].image} alt="Wholesale bag range" />
             <div className="about-visual-note">Good bags.<br />Better business.</div>
           </div>
         </div>
@@ -42,7 +46,7 @@ export default function About() {
             </div>
           </div>
           <div className="story-image">
-            <img src={products[1].image} alt="Wholesale bag catalogue" loading="lazy" />
+            <img src={visuals[1]?.image || fallbackProducts[1].image} alt="Wholesale bag catalogue" loading="lazy" />
           </div>
         </div>
       </section>

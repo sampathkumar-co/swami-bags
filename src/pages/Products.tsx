@@ -2,9 +2,11 @@ import { Search, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { categories, products } from '../data/products'
+import { useCatalog } from '../context/CatalogContext'
+import { categories } from '../data/products'
 
 export default function Products() {
+  const { products, loading, usingFallback } = useCatalog()
   const [params, setParams] = useSearchParams()
   const initialCategory = params.get('category') ?? 'All'
   const validInitial = categories.includes(initialCategory as typeof categories[number]) ? initialCategory : 'All'
@@ -17,7 +19,7 @@ export default function Products() {
       const haystack = [product.name, product.material, product.id, product.category].join(' ').toLowerCase()
       return matchesCategory && haystack.includes(query.toLowerCase())
     })
-  }, [category, query])
+  }, [products, category, query])
 
   const changeCategory = (value: string) => {
     setCategory(value)
@@ -57,18 +59,22 @@ export default function Products() {
 
         <div className="catalogue-summary">
           <span><strong>{filtered.length}</strong> products shown</span>
-          <span>Wholesale only · Direct WhatsApp enquiry</span>
+          <span>{usingFallback ? 'Demo data · server catalogue not available' : 'Wholesale only · Direct WhatsApp enquiry'}</span>
         </div>
 
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div className="empty-state"><p>Loading catalogue…</p></div>
+        ) : filtered.length > 0 ? (
           <div className="product-grid product-grid-catalogue">
             {filtered.map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         ) : (
           <div className="empty-state">
             <h2>No products found</h2>
-            <p>Try another category or clear your search.</p>
-            <button className="btn btn-primary" onClick={() => { setQuery(''); changeCategory('All') }}>Clear filters</button>
+            <p>{products.length ? 'Try another category or clear your search.' : 'No products have been published yet.'}</p>
+            {products.length > 0 && (
+              <button className="btn btn-primary" onClick={() => { setQuery(''); changeCategory('All') }}>Clear filters</button>
+            )}
           </div>
         )}
       </div>
