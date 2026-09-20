@@ -1,4 +1,4 @@
-import type { AdminImage, AdminProduct, Dashboard, ProductPayload, SiteSettings } from '../admin/types'
+import type { AdminImage, AdminProduct, AiGeneration, Dashboard, ProductPayload, SiteSettings } from '../admin/types'
 
 let csrfToken = ''
 
@@ -101,6 +101,10 @@ export const adminApi = {
     return request<AdminImage>(`/api/admin/products/${encodeURIComponent(id)}/marketing/generate`, {
       method: 'POST',
     })
+  },
+
+  generations(productId: string) {
+    return request<AiGeneration[]>(`/api/admin/products/generations?productId=${encodeURIComponent(productId)}`)
   },
 
   approveMarketing(id: string, imageId: string) {

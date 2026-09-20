@@ -4,7 +4,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { productCategories } from '../data/products'
 import { adminApi } from '../lib/adminApi'
-import type { AdminProduct, ProductPayload } from './types'
+import type { AdminProduct, AiGeneration, ProductPayload } from './types'
 
 type FormState = {
   id: string
@@ -47,13 +47,15 @@ export default function AdminProductEditor() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [aiConfigured, setAiConfigured] = useState(false)
+  const [generationHistory, setGenerationHistory] = useState<AiGeneration[]>([])
 
   const load = useCallback(async () => {
     if (!id) return
     setLoading(true)
     try {
-      const loaded = await adminApi.product(id)
+      const [loaded, history] = await Promise.all([adminApi.product(id), adminApi.generations(id)])
       setProduct(loaded)
+      setGenerationHistory(history)
       setForm({
         id: loaded.id,
         name: loaded.name,
@@ -329,6 +331,22 @@ export default function AdminProductEditor() {
                   </div>
                 ))}
               </div>
+
+              {generationHistory.length > 0 && (
+                <div className="admin-generation-history">
+                  <h3>Recent AI attempts</h3>
+                  {generationHistory.slice(0, 5).map((generation) => (
+                    <div key={generation.id} className="admin-generation-row">
+                      <span className={`admin-generation-status ${generation.status.toLowerCase()}`}>{generation.status}</span>
+                      <div>
+                        <strong>{generation.model}</strong>
+                        <small>{new Date(generation.createdAt).toLocaleString()}</small>
+                        {generation.errorMessage && <p>{generation.errorMessage}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}

@@ -64,3 +64,13 @@ export type SiteSettings = {
   businessAddress: string
   publicBaseUrl: string
 }
+
+export type AiGeneration = {
+  id: string
+  productId: string
+  model: string
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED'
+  resultImageId?: string | null
+  errorMessage?: string | null
+  createdAt: string
+}
