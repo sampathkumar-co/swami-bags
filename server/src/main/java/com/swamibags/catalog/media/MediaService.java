@@ -23,6 +23,7 @@ public class MediaService {
         this.dataDir = properties.dataDir().toAbsolutePath().normalize();
         this.mediaRoot = dataDir.resolve("media").normalize();
         Files.createDirectories(mediaRoot);
+        SharedFilePermissions.makeDirectoryPublicReadable(mediaRoot);
     }
 
     public StoredMedia saveOriginal(String productId, MultipartFile file) throws IOException {
@@ -37,12 +38,15 @@ public class MediaService {
         String extension = extensionFor(contentType);
         Path directory = productDirectory(productId).resolve("originals");
         Files.createDirectories(directory);
+        SharedFilePermissions.makeDirectoryPublicReadable(directory.getParent());
+        SharedFilePermissions.makeDirectoryPublicReadable(directory);
         String filename = UUID.randomUUID() + extension;
         Path target = safeResolve(directory, filename);
 
         try (var input = file.getInputStream()) {
             Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
         }
+        SharedFilePermissions.makeFilePublicReadable(target);
 
         return stored(target);
     }
@@ -50,8 +54,11 @@ public class MediaService {
     public StoredMedia saveMarketing(String productId, byte[] jpegBytes) throws IOException {
         Path directory = productDirectory(productId).resolve("marketing");
         Files.createDirectories(directory);
+        SharedFilePermissions.makeDirectoryPublicReadable(directory.getParent());
+        SharedFilePermissions.makeDirectoryPublicReadable(directory);
         Path target = safeResolve(directory, UUID.randomUUID() + ".jpg");
         Files.write(target, jpegBytes);
+        SharedFilePermissions.makeFilePublicReadable(target);
         return stored(target);
     }
 

@@ -1,6 +1,7 @@
 package com.swamibags.catalog.product;
 
 import com.swamibags.catalog.config.AppProperties;
+import com.swamibags.catalog.media.SharedFilePermissions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ public class CatalogExporter {
         this.json = json;
         this.catalogDir = properties.dataDir().toAbsolutePath().normalize().resolve("catalog");
         Files.createDirectories(catalogDir);
+        SharedFilePermissions.makeDirectoryPublicReadable(catalogDir);
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -78,6 +80,7 @@ public class CatalogExporter {
         } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
             Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
         }
+        SharedFilePermissions.makeFilePublicReadable(target);
     }
 
     public record CatalogSnapshot(String generatedAt, List<CatalogProduct> products) {}
