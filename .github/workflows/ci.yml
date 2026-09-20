@@ -64,8 +64,13 @@ jobs:
           cp .env.example .env
           sed -i 's/^ADMIN_PASSWORD=.*/ADMIN_PASSWORD=ci-test-password-12345/' .env
 
-      - name: Validate Compose
-        run: docker compose config --quiet
+      - name: Validate operations scripts and Compose
+        run: |
+          sh -n scripts/preflight.sh
+          sh -n scripts/deploy.sh
+          sh -n scripts/backup.sh
+          sh -n scripts/restore.sh
+          sh scripts/preflight.sh
 
       - name: Build production images
         run: docker compose build
@@ -210,6 +215,29 @@ jobs:
           curl -fsS "$base/catalog/config.json" > /tmp/public-config.json
           grep -q '"brandName":"Swami Bags CI"' /tmp/public-config.json
           grep -q '"whatsappNumber":"919876543210"' /tmp/public-config.json
+
+      - name: Verify backup and restore operations
+        run: |
+          set -euo pipefail
+          base="http://127.0.0.1:8088"
+
+          sh scripts/backup.sh
+          archive="$(ls -1t backups/swami-data-*.tgz | head -n 1)"
+          test -s "$archive"
+
+          printf 'RESTORE\n' | sh scripts/restore.sh "$archive"
+
+          for attempt in {1..30}; do
+            if curl -fsS "$base/healthz" >/dev/null \
+              && curl -fsS "$base/catalog/products.json" >/tmp/catalog-after-restore.json; then
+              break
+            fi
+            sleep 2
+          done
+
+          grep -q '"CI Smoke Bag"' /tmp/catalog-after-restore.json
+          curl -fsS "$base/catalog/config.json" > /tmp/config-after-restore.json
+          grep -q '"brandName":"Swami Bags CI"' /tmp/config-after-restore.json
 
       - name: Show container state
         run: docker compose ps
