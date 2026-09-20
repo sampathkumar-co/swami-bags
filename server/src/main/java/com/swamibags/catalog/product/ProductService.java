@@ -116,7 +116,13 @@ public class ProductService {
             throw new IllegalArgumentException("Upload between 1 and 6 product images.");
         }
 
-        int sort = repository.findImages(id).stream().filter(ProductImage::isOriginal)
+        List<ProductImage> existingImages = repository.findImages(id);
+        long existingOriginals = existingImages.stream().filter(ProductImage::isOriginal).count();
+        if (existingOriginals + files.size() > 6) {
+            throw new IllegalArgumentException("A product can have at most 6 original reference photos.");
+        }
+
+        int sort = existingImages.stream().filter(ProductImage::isOriginal)
                 .mapToInt(ProductImage::sortOrder).max().orElse(-1) + 1;
 
         for (MultipartFile file : files) {
