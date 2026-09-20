@@ -314,8 +314,14 @@ export default function AdminProductEditor() {
               </div>
               <button className="btn btn-primary btn-full" type="button" onClick={() => void generate()} disabled={!!busy || originals.length === 0}>
                 {busy === 'ai' ? <LoaderCircle className="spin" size={17} /> : <Sparkles size={17} />}
-                {marketing.length ? 'Regenerate marketing image' : 'Generate marketing image'}
+                {busy === 'ai' ? 'Generating marketing image…' : marketing.length ? 'Regenerate marketing image' : 'Generate marketing image'}
               </button>
+              {busy === 'ai' && (
+                <div className="admin-ai-progress">
+                  <LoaderCircle className="spin" size={16} />
+                  <span>Creating a faithful product visual. This can take a couple of minutes; keep this page open.</span>
+                </div>
+              )}
 
               <div className="admin-marketing-list">
                 {marketing.map((image) => (
