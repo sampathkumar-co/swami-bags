@@ -238,9 +238,9 @@ h3 { font-size: 1.35rem; }
 .product-detail-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 55px; align-items: start; }
 .detail-main-image { height: 560px; overflow: hidden; border-radius: var(--radius-lg); background: var(--cream); border: 1px solid var(--line); }
 .detail-main-image img { width: 100%; height: 100%; object-fit: cover; }
-.detail-thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.detail-thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 10px; margin-top: 10px; }
 .detail-thumbs button { height: 90px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; padding: 0; background: white; }
-.detail-thumbs button:first-child { border-color: var(--wine); box-shadow: inset 0 0 0 1px var(--wine); }
+.detail-thumbs button.active { border-color: var(--wine); box-shadow: inset 0 0 0 1px var(--wine); }
 .detail-thumbs img { width: 100%; height: 100%; object-fit: cover; }
 .detail-content { padding-top: 14px; }
 .detail-title-row { display: flex; justify-content: space-between; gap: 22px; align-items: start; }
