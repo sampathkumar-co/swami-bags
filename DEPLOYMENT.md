@@ -59,12 +59,16 @@ OPENAI_IMAGE_SIZE=1536x1024
 
 Never commit the real `.env`.
 
-## 3. Start
+## 3. Preflight and start
+
+Run the included preflight before the first deployment. It rejects unsafe placeholder admin credentials and validates the Compose configuration.
 
 ```bash
-docker compose up -d --build
-docker compose ps
+sh scripts/preflight.sh
+sh scripts/deploy.sh
 ```
+
+The deploy script builds the containers, starts the stack, waits for the public health endpoint and prints container status.
 
 Default public port:
 
@@ -138,6 +142,14 @@ sh scripts/backup.sh
 ```
 
 Archives are written to `./backups/`. Copy important backups off the VPS as well.
+
+To restore a backup during maintenance:
+
+```bash
+sh scripts/restore.sh backups/swami-data-YYYYMMDD-HHMMSS.tgz
+```
+
+The restore script requires typing `RESTORE` before it replaces the live persistent data.
 
 ## 8. Updating production
 
