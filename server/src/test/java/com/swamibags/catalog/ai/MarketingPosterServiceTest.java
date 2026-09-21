@@ -1,9 +1,12 @@
 package com.swamibags.catalog.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.swamibags.catalog.config.AppProperties;
 import com.swamibags.catalog.product.Product;
+import com.swamibags.catalog.settings.SiteSettings;
+import com.swamibags.catalog.settings.SiteSettingsRepository;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -19,20 +22,15 @@ class MarketingPosterServiceTest {
 
     @Test
     void composesVerifiedProductTextIntoExpectedPosterSize() throws Exception {
-        var properties = new AppProperties(
-                "admin",
-                "test-password-123",
-                Path.of("/tmp"),
+        var settings = mock(SiteSettingsRepository.class);
+        when(settings.get()).thenReturn(new SiteSettings(
                 "New Chandra Bags",
                 "919876543210",
                 "+91 98765 43210",
                 "sales@example.com",
                 "Test address",
                 "https://example.com",
-                "",
-                "gpt-image-2.5-sunburst",
-                "medium",
-                "1536x1024");
+                ""));
 
         var product = new Product(
                 "SB-POSTER-01",
@@ -54,7 +52,7 @@ class MarketingPosterServiceTest {
                 "2026-09-20T00:00:00Z");
 
         byte[] source = sourceImage();
-        byte[] poster = new MarketingPosterService(properties).compose(source, product);
+        byte[] poster = new MarketingPosterService(settings).compose(source, product);
 
         assertThat(poster).isNotEmpty();
         assertThat(poster[0] & 0xff).isEqualTo(0xff);
@@ -68,20 +66,15 @@ class MarketingPosterServiceTest {
 
     @Test
     void zeroPriceRendersAsQuoteOnlyPosterWithoutFailing() throws Exception {
-        var properties = new AppProperties(
-                "admin",
-                "test-password-123",
-                Path.of("/tmp"),
+        var settings = mock(SiteSettingsRepository.class);
+        when(settings.get()).thenReturn(new SiteSettings(
                 "New Chandra Bags",
                 "",
                 "",
                 "",
                 "",
                 "",
-                "",
-                "gpt-image-2.5-sunburst",
-                "medium",
-                "1536x1024");
+                ""));
 
         var product = new Product(
                 "SB-POSTER-02",
@@ -102,7 +95,7 @@ class MarketingPosterServiceTest {
                 "2026-09-20T00:00:00Z",
                 "2026-09-20T00:00:00Z");
 
-        byte[] poster = new MarketingPosterService(properties).compose(sourceImage(), product);
+        byte[] poster = new MarketingPosterService(settings).compose(sourceImage(), product);
         assertThat(ImageIO.read(new ByteArrayInputStream(poster))).isNotNull();
     }
 

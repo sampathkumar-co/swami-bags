@@ -1,11 +1,10 @@
 import { ArrowRight, Boxes, Handshake, ShieldCheck, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useCatalog } from '../context/CatalogContext'
-import { fallbackProducts } from '../data/products'
+import { useCatalog } from '../context/catalog-context'
 
 export default function About() {
-  const { products, config, usingFallback } = useCatalog()
-  const visuals = products.length ? products : (usingFallback ? fallbackProducts : [])
+  const { products, config } = useCatalog()
+  const visuals = products
 
   return (
     <>
@@ -13,8 +12,8 @@ export default function About() {
         <div className="container about-hero-grid">
           <div>
             <span className="kicker">About {config.brandName || 'New Chandra Bags'}</span>
-            <h1>Wholesale bags built around long-term business relationships.</h1>
-            <p>We keep the buying experience straightforward: dependable products, clear quantities, transparent availability and direct communication.</p>
+            <h1>A straightforward wholesale bag catalogue.</h1>
+            <p>We keep the buying workflow simple: clear product details, visible quantities, transparent availability and direct enquiries.</p>
             <Link className="btn btn-primary btn-large" to="/products">Explore catalogue <ArrowRight size={18} /></Link>
           </div>
           <div className="about-visual">
@@ -28,10 +27,10 @@ export default function About() {
 
       <section className="section">
         <div className="container value-grid">
-          <article><ShieldCheck /><h3>Consistent quality</h3><p>Practical materials and construction chosen for repeat wholesale use.</p></article>
-          <article><Boxes /><h3>Bulk ready</h3><p>MOQ, available quantity and restock information are visible before you enquire.</p></article>
-          <article><Truck /><h3>Pan India supply</h3><p>Designed for buyers who need dependable dispatch and recurring supply.</p></article>
-          <article><Handshake /><h3>Direct relationship</h3><p>Product enquiries go straight to WhatsApp, keeping communication fast and human.</p></article>
+          <article><ShieldCheck /><h2>Clear specifications</h2><p>Material, MOQ, stock and product details are shown before you enquire.</p></article>
+          <article><Boxes /><h2>Bulk ready</h2><p>MOQ, available quantity and restock information are visible before you enquire.</p></article>
+          <article><Truck /><h2>Dispatch clarity</h2><p>Confirm current availability, quantities and dispatch timing directly before ordering.</p></article>
+          <article><Handshake /><h2>Direct enquiries</h2><p>Product codes and quantities are prepared for a simple buyer-to-business enquiry.</p></article>
         </div>
       </section>
 
@@ -43,7 +42,7 @@ export default function About() {
             <p>This website is intentionally catalogue-first rather than retail ecommerce. There is no customer account, payment flow or cluttered checkout. Buyers compare products, check material and availability, then send a direct enquiry with the correct product code already included.</p>
             <div className="story-stats">
               <div><strong>5</strong><span>Focused categories</span></div>
-              <div><strong>Direct</strong><span>WhatsApp enquiries</span></div>
+              <div><strong>Direct</strong><span>Wholesale enquiries</span></div>
               <div><strong>Clear</strong><span>Stock & restock status</span></div>
             </div>
           </div>

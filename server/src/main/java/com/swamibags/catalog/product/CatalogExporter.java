@@ -119,13 +119,17 @@ public class CatalogExporter {
     private void writeAtomically(Path target, byte[] content) throws IOException {
         Files.createDirectories(target.getParent());
         Path temp = Files.createTempFile(target.getParent(), target.getFileName().toString(), ".tmp");
-        Files.write(temp, content);
         try {
-            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
-            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+            Files.write(temp, content);
+            try {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            SharedFilePermissions.makeFilePublicReadable(target);
+        } finally {
+            Files.deleteIfExists(temp);
         }
-        SharedFilePermissions.makeFilePublicReadable(target);
     }
 
     public record CatalogSnapshot(String generatedAt, List<CatalogProduct> products) {}

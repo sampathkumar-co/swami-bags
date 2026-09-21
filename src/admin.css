@@ -127,6 +127,7 @@
 .admin-panel-head { min-height: 74px; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 18px; border-bottom: 1px solid var(--admin-line); }
 .admin-panel-head h2 { margin: 0 0 3px; font-size: 1.2rem; }
 .admin-panel-head p { margin: 0; font-size: .72rem; }
+.admin-photo-count { flex: 0 0 auto; min-width: 44px; padding: 6px 9px; border: 1px solid var(--admin-line); border-radius: 999px; background: #faf6f1; color: var(--admin-muted); font-size: .68rem; font-weight: 800; text-align: center; }
 .admin-text-link { display: inline-flex; align-items: center; gap: 6px; color: var(--admin-wine); font-size: .76rem; font-weight: 800; }
 
 .admin-table-wrap { overflow-x: auto; }
@@ -186,6 +187,7 @@
 .admin-upload-zone strong { font-size: .8rem; }
 .admin-upload-zone span { color: var(--admin-muted); font-size: .68rem; max-width: 300px; }
 .admin-upload-zone input { display: none; }
+.admin-upload-zone.disabled { cursor: not-allowed; opacity: .72; background: #f6f1ec; }
 
 .admin-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 18px 18px; }
 .admin-image-card { overflow: hidden; border: 1px solid var(--admin-line); border-radius: 11px; background: white; }

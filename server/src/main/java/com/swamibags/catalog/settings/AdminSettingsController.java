@@ -2,9 +2,11 @@ package com.swamibags.catalog.settings;
 
 import com.swamibags.catalog.media.MediaService;
 import com.swamibags.catalog.product.CatalogExporter;
+import com.swamibags.catalog.product.ProductRepository;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,11 +24,17 @@ public class AdminSettingsController {
     private final SiteSettingsRepository settings;
     private final CatalogExporter exporter;
     private final MediaService media;
+    private final ProductRepository products;
 
-    public AdminSettingsController(SiteSettingsRepository settings, CatalogExporter exporter, MediaService media) {
+    public AdminSettingsController(
+            SiteSettingsRepository settings,
+            CatalogExporter exporter,
+            MediaService media,
+            ProductRepository products) {
         this.settings = settings;
         this.exporter = exporter;
         this.media = media;
+        this.products = products;
     }
 
     @GetMapping
@@ -37,24 +45,74 @@ public class AdminSettingsController {
     @PutMapping
     public SiteSettings update(@Valid @RequestBody SiteSettings request) {
         validate(request);
+        SiteSettings previous = settings.get();
         SiteSettings saved = settings.save(request);
-        exporter.export();
+        boolean brandChanged = !previous.brandName().equals(saved.brandName());
+        List<String> previouslyApprovedMarketing = List.of();
+        boolean marketingApprovalsChanged = false;
+        try {
+            if (brandChanged) {
+                previouslyApprovedMarketing = products.approvedMarketingImageIds();
+                products.unapproveAllMarketingImages();
+                marketingApprovalsChanged = true;
+            }
+            exporter.export();
+        } catch (RuntimeException updateFailure) {
+            settings.save(previous);
+            if (marketingApprovalsChanged) {
+                products.restoreApprovedMarketingImages(previouslyApprovedMarketing);
+            }
+            try {
+                exporter.export();
+            } catch (RuntimeException rollbackFailure) {
+                updateFailure.addSuppressed(rollbackFailure);
+            }
+            throw updateFailure;
+        }
         return saved;
     }
 
     @PostMapping(value = "/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SiteSettings uploadLogo(@RequestParam("file") MultipartFile file) throws IOException {
+        String previousUrl = settings.get().logoUrl();
         var stored = media.saveBrandLogo(file);
-        SiteSettings saved = settings.setLogoUrl(stored.publicUrl());
-        exporter.export();
-        return saved;
+        try {
+            SiteSettings saved = settings.setLogoUrl(stored.publicUrl());
+            try {
+                exporter.export();
+            } catch (RuntimeException exportFailure) {
+                settings.setLogoUrl(previousUrl);
+                try {
+                    exporter.export();
+                } catch (RuntimeException rollbackFailure) {
+                    exportFailure.addSuppressed(rollbackFailure);
+                }
+                throw exportFailure;
+            }
+            media.deletePublicMediaUrl(previousUrl);
+            return saved;
+        } catch (RuntimeException exception) {
+            media.delete(stored);
+            throw exception;
+        }
     }
 
     @DeleteMapping("/logo")
     public SiteSettings deleteLogo() {
-        media.deleteBrandLogo();
+        String previousUrl = settings.get().logoUrl();
         SiteSettings saved = settings.setLogoUrl("");
-        exporter.export();
+        try {
+            exporter.export();
+        } catch (RuntimeException exportFailure) {
+            settings.setLogoUrl(previousUrl);
+            try {
+                exporter.export();
+            } catch (RuntimeException rollbackFailure) {
+                exportFailure.addSuppressed(rollbackFailure);
+            }
+            throw exportFailure;
+        }
+        media.deletePublicMediaUrl(previousUrl);
         return saved;
     }
 

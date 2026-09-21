@@ -1,7 +1,7 @@
 package com.swamibags.catalog.ai;
 
-import com.swamibags.catalog.config.AppProperties;
 import com.swamibags.catalog.product.Product;
+import com.swamibags.catalog.settings.SiteSettingsRepository;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -14,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.RoundingMode;
 import java.util.List;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -29,10 +28,10 @@ public class MarketingPosterService {
     private static final Color MUTED = new Color(101, 87, 80);
     private static final Color CREAM = new Color(255, 250, 243);
 
-    private final AppProperties properties;
+    private final SiteSettingsRepository settings;
 
-    public MarketingPosterService(AppProperties properties) {
-        this.properties = properties;
+    public MarketingPosterService(SiteSettingsRepository settings) {
+        this.settings = settings;
     }
 
     public byte[] compose(byte[] baseImage, Product product) {
@@ -69,7 +68,7 @@ public class MarketingPosterService {
 
             g.setColor(WINE);
             g.setFont(new Font(Font.SERIF, Font.BOLD, 38));
-            g.drawString(properties.brandName(), x, y);
+            g.drawString(settings.get().brandName(), x, y);
             y += 56;
 
             g.setColor(INK);
@@ -103,33 +102,23 @@ public class MarketingPosterService {
                 y += 16;
             }
 
-            int priceY = panelY + panelH - 160;
+            int footerY = panelY + panelH - 118;
+            g.setColor(new Color(232, 216, 204));
+            g.fillRoundRect(x, footerY - 24, textW, 2, 2, 2);
+
             g.setColor(WINE);
-            g.setFont(new Font(Font.SERIF, Font.BOLD, 34));
-            String price = product.price().signum() > 0
-                    ? "Wholesale ₹" + product.price().setScale(0, RoundingMode.HALF_UP) + " / " + product.priceUnit()
-                    : "Wholesale price on enquiry";
-            g.drawString(price, x, priceY);
+            g.setFont(new Font(Font.SERIF, Font.BOLD, 28));
+            g.drawString("Wholesale catalogue", x, footerY + 20);
 
             g.setColor(MUTED);
-            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 19));
-            g.drawString("MOQ " + product.moq() + " pcs  •  " +
-                    (product.stock() > 0 ? product.stock() + " available" : "Restock approx. " + safeRestock(product) + " days"),
-                    x, priceY + 38);
-
-            g.setColor(WINE);
-            g.setFont(new Font(Font.SERIF, Font.ITALIC, 23));
-            g.drawString("Quality • Reliable • Wholesale", x, panelY + panelH - 48);
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+            g.drawString("Contact for current pricing & availability", x, footerY + 54);
 
             g.dispose();
             return encodeJpeg(canvas, 0.9f);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to compose marketing poster.", e);
         }
-    }
-
-    private int safeRestock(Product product) {
-        return product.restockDays() == null ? 7 : product.restockDays();
     }
 
     private void configure(Graphics2D g) {

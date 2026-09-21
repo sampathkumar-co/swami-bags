@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Image, Package, Pencil, Plus, Sparkles } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Image, LoaderCircle, Package, Pencil, Plus, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi } from '../lib/adminApi'
@@ -7,6 +7,7 @@ import type { AdminProduct, Dashboard } from './types'
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Dashboard | null>(null)
   const [products, setProducts] = useState<AdminProduct[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState('')
 
@@ -18,10 +19,18 @@ export default function AdminDashboard() {
       setError('')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to load admin data.')
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    let active = true
+    queueMicrotask(() => {
+      if (active) void load()
+    })
+    return () => { active = false }
+  }, [load])
 
   const togglePublish = async (product: AdminProduct) => {
     setBusyId(product.id)
@@ -65,7 +74,12 @@ export default function AdminDashboard() {
           <Link to="/admin/products/new" className="admin-text-link"><Plus size={15} /> New product</Link>
         </div>
 
-        {products.length === 0 ? (
+        {loading ? (
+          <div className="admin-empty">
+            <LoaderCircle className="spin" />
+            <p>Loading products…</p>
+          </div>
+        ) : products.length === 0 ? (
           <div className="admin-empty">
             <Package />
             <h3>No products yet</h3>

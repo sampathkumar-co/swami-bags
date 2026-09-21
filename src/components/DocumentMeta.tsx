@@ -1,6 +1,15 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useCatalog } from '../context/CatalogContext'
+import { useCatalog } from '../context/catalog-context'
+import { hasWhatsAppNumber } from '../lib/whatsapp'
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
 
 function upsertMeta(selector: string, attribute: 'name' | 'property', key: string, content: string) {
   let element = document.head.querySelector<HTMLMetaElement>(selector)
@@ -19,11 +28,12 @@ export default function DocumentMeta() {
   useEffect(() => {
     const brand = config.brandName || 'New Chandra Bags'
     const path = location.pathname
-    const productSlug = path.startsWith('/products/') ? decodeURIComponent(path.slice('/products/'.length)) : ''
+    const productSlug = path.startsWith('/products/') ? safeDecode(path.slice('/products/'.length)) : ''
     const product = productSlug ? products.find((item) => item.slug === productSlug) : undefined
+    const hasWhatsApp = hasWhatsAppNumber(config.whatsappNumber)
 
     let title = `${brand} | Wholesale Bag Catalogue`
-    let description = 'Wholesale cash bags, luggage bags, jute bags, zip bags and purses with clear MOQ, stock and direct WhatsApp enquiries.'
+    let description = `Wholesale cash bags, luggage bags, jute bags, zip bags and purses with clear MOQ, stock and ${hasWhatsApp ? 'direct WhatsApp' : 'direct'} enquiries.`
     let robots = 'index,follow,max-image-preview:large'
 
     if (path.startsWith('/admin')) {
@@ -54,14 +64,24 @@ export default function DocumentMeta() {
     upsertMeta('meta[property="og:description"]', 'property', 'og:description', description)
 
     const icon = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')
-    if (icon) icon.href = config.logoUrl || '/favicon.svg'
-    if (config.logoUrl) {
-      upsertMeta('meta[property="og:image"]', 'property', 'og:image', config.logoUrl)
-    } else {
-      document.head.querySelector('meta[property="og:image"]')?.remove()
+    if (icon) {
+      icon.href = config.logoUrl || '/favicon.svg'
+      icon.type = config.logoUrl
+        ? (config.logoUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg')
+        : 'image/svg+xml'
     }
 
     const base = config.publicBaseUrl?.replace(/\/$/, '')
+    if (config.logoUrl) {
+      const socialImage = /^https?:\/\//i.test(config.logoUrl)
+        ? config.logoUrl
+        : (base && /^https?:\/\//i.test(base)
+            ? base + (config.logoUrl.startsWith('/') ? '' : '/') + config.logoUrl
+            : config.logoUrl)
+      upsertMeta('meta[property="og:image"]', 'property', 'og:image', socialImage)
+    } else {
+      document.head.querySelector('meta[property="og:image"]')?.remove()
+    }
     const canonicalHref = base && /^https?:\/\//i.test(base) ? `${base}${path === '/' ? '' : path}` : ''
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (canonicalHref) {

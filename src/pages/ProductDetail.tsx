@@ -1,23 +1,24 @@
 import { ArrowLeft, Check, MessageCircle, Minus, PackageCheck, Plus, ShieldCheck, Truck } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { useCatalog } from '../context/CatalogContext'
-import { whatsappUrl } from '../lib/whatsapp'
+import { useCatalog } from '../context/catalog-context'
+import { hasWhatsAppNumber, whatsappUrl } from '../lib/whatsapp'
 
 export default function ProductDetail() {
   const { slug } = useParams()
   const { products, config, loading } = useCatalog()
   const product = products.find((item) => item.slug === slug)
-  const [quantity, setQuantity] = useState(1)
-  const [selectedImage, setSelectedImage] = useState('')
+  const [selection, setSelection] = useState({ productId: '', quantity: 1, selectedImage: '' })
+  const gallery = product ? Array.from(new Set([product.image, ...product.images].filter(Boolean))) : []
+  const quantity = product && selection.productId === product.id
+    ? Math.max(product.moq, selection.quantity)
+    : (product?.moq ?? 1)
+  const selectedImage = product && selection.productId === product.id && gallery.includes(selection.selectedImage)
+    ? selection.selectedImage
+    : (gallery[0] || '')
 
-  useEffect(() => {
-    if (product) {
-      setQuantity(product.moq)
-      setSelectedImage(product.image || product.images[0] || '')
-    }
-  }, [product])
+  const hasWhatsApp = hasWhatsAppNumber(config.whatsappNumber)
 
   const enquiryHref = useMemo(() => {
     if (!product) return '/contact'
@@ -50,7 +51,6 @@ export default function ProductDetail() {
 
   const quantityStep = Math.max(1, Math.round(product.moq / 5))
   const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 3)
-  const gallery = Array.from(new Set([product.image, ...product.images].filter(Boolean)))
 
   return (
     <>
@@ -64,13 +64,17 @@ export default function ProductDetail() {
               </div>
               {gallery.length > 1 && (
                 <div className="detail-thumbs">
-                  {gallery.slice(0, 5).map((image, index) => (
+                  {gallery.map((image, index) => (
                     <button
                       key={image}
                       className={selectedImage === image ? 'active' : ''}
                       aria-label={`Product view ${index + 1}`}
                       aria-pressed={selectedImage === image}
-                      onClick={() => setSelectedImage(image)}
+                      onClick={() => setSelection((current) => ({
+                        productId: product.id,
+                        quantity: current.productId === product.id ? current.quantity : product.moq,
+                        selectedImage: image,
+                      }))}
                     >
                       <img src={image} alt="" />
                     </button>
@@ -86,8 +90,8 @@ export default function ProductDetail() {
                   <h1>{product.name}</h1>
                   <span className="product-code">{product.id}</span>
                 </div>
-                <span className={product.stock > 0 ? 'stock-badge in-stock static-badge' : 'stock-badge out-stock static-badge'}>
-                  {product.stock > 0 ? 'In stock' : 'Out of stock'}
+                <span className={product.stock >= product.moq ? 'stock-badge in-stock static-badge' : 'stock-badge out-stock static-badge'}>
+                  {product.stock >= product.moq ? 'In stock' : product.stock > 0 ? 'Limited stock' : 'Out of stock'}
                 </span>
               </div>
 
@@ -96,13 +100,19 @@ export default function ProductDetail() {
                   ? <><strong>₹{product.price}</strong><span>/ {product.priceUnit || 'piece'}</span></>
                   : <strong>Price on enquiry</strong>}
               </div>
-              <p className="detail-description">{product.description}</p>
+              {product.description && <p className="detail-description">{product.description}</p>}
 
               <div className="spec-table">
                 <div><span>Material</span><strong>{product.material}</strong></div>
                 <div><span>Minimum order</span><strong>{product.moq} pieces</strong></div>
                 <div><span>Available quantity</span><strong>{product.stock > 0 ? `${product.stock} pieces` : 'Currently unavailable'}</strong></div>
-                <div><span>Restock time</span><strong>{product.stock > 0 ? 'Regular supply' : `Approx. ${product.restockDays ?? 7} days`}</strong></div>
+                <div><span>Restock time</span><strong>{product.stock >= product.moq
+                  ? 'Not currently needed'
+                  : product.restockDays === 0
+                    ? 'Restocking now'
+                    : product.restockDays != null
+                      ? `Approx. ${product.restockDays} days`
+                      : 'On enquiry'}</strong></div>
                 <div><span>Size</span><strong>{product.size || 'On enquiry'}</strong></div>
               </div>
 
@@ -112,7 +122,14 @@ export default function ProductDetail() {
                   <small>MOQ {product.moq} pieces</small>
                 </div>
                 <div className="quantity-control">
-                  <button aria-label="Decrease quantity" onClick={() => setQuantity((value) => Math.max(product.moq, value - quantityStep))}>
+                  <button
+                    aria-label="Decrease quantity"
+                    onClick={() => setSelection({
+                      productId: product.id,
+                      quantity: Math.max(product.moq, quantity - quantityStep),
+                      selectedImage,
+                    })}
+                  >
                     <Minus size={16} />
                   </button>
                   <input
@@ -120,10 +137,21 @@ export default function ProductDetail() {
                     min={product.moq}
                     step={quantityStep}
                     value={quantity}
-                    onChange={(event) => setQuantity(Math.max(product.moq, Number(event.target.value) || product.moq))}
+                    onChange={(event) => setSelection({
+                      productId: product.id,
+                      quantity: Math.max(product.moq, Math.floor(Number(event.target.value) || product.moq)),
+                      selectedImage,
+                    })}
                     aria-label="Required quantity"
                   />
-                  <button aria-label="Increase quantity" onClick={() => setQuantity((value) => value + quantityStep)}>
+                  <button
+                    aria-label="Increase quantity"
+                    onClick={() => setSelection({
+                      productId: product.id,
+                      quantity: quantity + quantityStep,
+                      selectedImage,
+                    })}
+                  >
                     <Plus size={16} />
                   </button>
                 </div>
@@ -131,7 +159,7 @@ export default function ProductDetail() {
 
               <a className="btn btn-whatsapp btn-large btn-full" href={enquiryHref}>
                 <MessageCircle size={19} />
-                Enquire on WhatsApp
+                {hasWhatsApp ? 'Enquire on WhatsApp' : 'Send enquiry'}
               </a>
               <small className="helper-text">Product, material and requested quantity are added to the message automatically.</small>
             </div>
@@ -141,25 +169,29 @@ export default function ProductDetail() {
 
       <section className="detail-benefits">
         <div className="container trust-grid">
-          <div><ShieldCheck /><span><strong>Durable material</strong><small>Wholesale-ready build</small></span></div>
+          <div><ShieldCheck /><span><strong>Material shown</strong><small>Product-specific details</small></span></div>
           <div><PackageCheck /><span><strong>Bulk supply</strong><small>Clear MOQ & stock</small></span></div>
-          <div><Truck /><span><strong>Pan India</strong><small>Reliable dispatch</small></span></div>
-          <div><Check /><span><strong>Custom branding</strong><small>Available on request</small></span></div>
+          <div><Truck /><span><strong>Dispatch enquiry</strong><small>Confirm timing directly</small></span></div>
+          <div><Check /><span><strong>Product features</strong><small>Listed from the catalogue</small></span></div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container two-column-detail">
-          <div>
-            <span className="kicker">Product details</span>
-            <h2>Made for practical everyday use.</h2>
-            <p>{product.description}</p>
+      {(product.description || product.features.length > 0) && (
+        <section className="section">
+          <div className="container two-column-detail">
+            <div>
+              <span className="kicker">Product details</span>
+              <h2>Product information at a glance.</h2>
+              {product.description && <p>{product.description}</p>}
+            </div>
+            {product.features.length > 0 && (
+              <div className="feature-list">
+                {product.features.map((feature) => <div key={feature}><Check size={17} /> {feature}</div>)}
+              </div>
+            )}
           </div>
-          <div className="feature-list">
-            {product.features.map((feature) => <div key={feature}><Check size={17} /> {feature}</div>)}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {related.length > 0 && (
         <section className="section section-soft">

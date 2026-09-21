@@ -1,17 +1,19 @@
 import { MessageCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useCatalog } from '../context/CatalogContext'
-import { whatsappUrl } from '../lib/whatsapp'
+import { useCatalog } from '../context/catalog-context'
+import { hasWhatsAppNumber, whatsappUrl } from '../lib/whatsapp'
 import type { CatalogProduct } from '../types/catalog'
 
 export default function ProductCard({ product }: { product: CatalogProduct }) {
   const { config } = useCatalog()
-  const available = product.stock > 0
+  const hasStock = product.stock > 0
+  const meetsMoq = product.stock >= product.moq
   const message = [
     `Hello, I'm interested in ${product.name} (${product.id}).`,
     `MOQ: ${product.moq} pieces.`,
     'Please share current wholesale pricing and availability.',
   ].join('\n')
+  const hasWhatsApp = hasWhatsAppNumber(config.whatsappNumber)
   const enquiryHref = whatsappUrl(config.whatsappNumber, message)
 
   return (
@@ -22,8 +24,16 @@ export default function ProductCard({ product }: { product: CatalogProduct }) {
         ) : (
           <div className="product-image product-placeholder">Image coming soon</div>
         )}
-        <span className={available ? 'stock-badge in-stock' : 'stock-badge out-stock'}>
-          {available ? 'In stock' : `Restock in ~${product.restockDays ?? 7} days`}
+        <span className={meetsMoq ? 'stock-badge in-stock' : 'stock-badge out-stock'}>
+          {meetsMoq
+            ? 'In stock'
+            : hasStock
+              ? `Limited stock · ${product.stock} available`
+              : (product.restockDays === 0
+                  ? 'Restocking now'
+                  : product.restockDays != null
+                    ? `Restock in ~${product.restockDays} days`
+                    : 'Restock time on enquiry')}
         </span>
       </Link>
       <div className="product-card-body">
@@ -41,11 +51,11 @@ export default function ProductCard({ product }: { product: CatalogProduct }) {
         </div>
         <div className="product-meta">
           <span>MOQ: {product.moq} pcs</span>
-          <span>{available ? `${product.stock} available` : 'Currently unavailable'}</span>
+          <span>{hasStock ? `${product.stock} available` : 'Currently unavailable'}</span>
         </div>
         <a className="btn btn-whatsapp btn-full" href={enquiryHref}>
           <MessageCircle size={16} />
-          Enquire on WhatsApp
+          {hasWhatsApp ? 'Enquire on WhatsApp' : 'Send enquiry'}
         </a>
       </div>
     </article>

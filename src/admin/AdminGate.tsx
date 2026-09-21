@@ -9,7 +9,9 @@ export default function AdminGate() {
   useEffect(() => {
     let active = true
     adminApi.me()
-      .then(() => { if (active) setState('allowed') })
+      .then((session) => {
+        if (active) setState(session.authenticated ? 'allowed' : 'denied')
+      })
       .catch(() => { if (active) setState('denied') })
     return () => { active = false }
   }, [])

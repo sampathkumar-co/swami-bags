@@ -2,18 +2,26 @@ import { LockKeyhole, LogIn } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useCatalog } from '../context/catalog-context'
 import { adminApi } from '../lib/adminApi'
 
 export default function AdminLogin() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { config } = useCatalog()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    adminApi.me().then(() => navigate('/admin', { replace: true })).catch(() => undefined)
+    let active = true
+    adminApi.me()
+      .then((session) => {
+        if (active && session.authenticated) navigate('/admin', { replace: true })
+      })
+      .catch(() => undefined)
+    return () => { active = false }
   }, [navigate])
 
   const submit = async (event: FormEvent) => {
@@ -35,8 +43,8 @@ export default function AdminLogin() {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login-brand">
-          <span className="brand-mark">NC</span>
-          <div><strong>New Chandra Bags</strong><small>Private catalogue admin</small></div>
+          <span className="brand-mark">{config.logoUrl ? <img src={config.logoUrl} alt="" /> : 'NC'}</span>
+          <div><strong>{config.brandName || 'New Chandra Bags'}</strong><small>Private catalogue admin</small></div>
         </div>
         <div className="admin-login-icon"><LockKeyhole /></div>
         <h1>Welcome back</h1>

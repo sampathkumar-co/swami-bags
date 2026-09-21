@@ -125,6 +125,32 @@ public class ProductRepository {
         }
     }
 
+    public void unapproveMarketingImages(String productId) {
+        jdbc.update("UPDATE product_images SET approved = 0 WHERE product_id = ? AND kind = 'MARKETING'", productId);
+    }
+
+    public List<String> approvedMarketingImageIds() {
+        return jdbc.query(
+                "SELECT image_id FROM product_images WHERE kind = 'MARKETING' AND approved = 1",
+                (rs, rowNum) -> rs.getString("image_id"));
+    }
+
+    public void unapproveAllMarketingImages() {
+        jdbc.update("UPDATE product_images SET approved = 0 WHERE kind = 'MARKETING'");
+    }
+
+    public void restoreApprovedMarketingImages(List<String> imageIds) {
+        jdbc.update("UPDATE product_images SET approved = 0 WHERE kind = 'MARKETING'");
+        if (imageIds == null) {
+            return;
+        }
+        for (String imageId : imageIds) {
+            jdbc.update(
+                    "UPDATE product_images SET approved = 1 WHERE image_id = ? AND kind = 'MARKETING'",
+                    imageId);
+        }
+    }
+
     public void deleteImage(String productId, String imageId) {
         jdbc.update("DELETE FROM product_images WHERE product_id = ? AND image_id = ?", productId, imageId);
     }

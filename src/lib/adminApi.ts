@@ -4,8 +4,12 @@ let csrfToken = ''
 
 async function readError(response: Response) {
   try {
-    const body = await response.json() as { message?: string }
-    return body.message || `Request failed with status ${response.status}`
+    const body = await response.json() as { message?: string; fields?: Record<string, string> }
+    const message = body.message || `Request failed with status ${response.status}`
+    const fieldDetails = body.fields
+      ? Object.entries(body.fields).map(([field, detail]) => `${field}: ${detail}`).join(' · ')
+      : ''
+    return fieldDetails ? `${message} ${fieldDetails}` : message
   } catch {
     return `Request failed with status ${response.status}`
   }
@@ -35,6 +39,12 @@ async function request<T>(path: string, init: RequestInit = {}, retryCsrf = true
     await ensureCsrf(true)
     return request<T>(path, init, false)
   }
+  if (response.status === 401 && !path.endsWith('/auth/login') && !path.endsWith('/auth/me')) {
+    csrfToken = ''
+    if (window.location.pathname !== '/admin/login') {
+      window.location.assign('/admin/login')
+    }
+  }
   if (!response.ok) throw new Error(await readError(response))
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
@@ -54,8 +64,12 @@ export const adminApi = {
     return request<{ authenticated: boolean; username: string }>('/api/admin/auth/me')
   },
 
-  logout() {
-    return request<{ authenticated: boolean }>('/api/admin/auth/logout', { method: 'POST' })
+  async logout() {
+    try {
+      return await request<{ authenticated: boolean }>('/api/admin/auth/logout', { method: 'POST' })
+    } finally {
+      csrfToken = ''
+    }
   },
 
   dashboard() {
@@ -149,7 +163,7 @@ export const adminApi = {
   },
 
   changePassword(currentPassword: string, newPassword: string) {
-    return request<{ changed: boolean }>('/api/admin/auth/password', {
+    return request<{ changed: boolean; otherSessionsRevoked: boolean }>('/api/admin/auth/password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     })

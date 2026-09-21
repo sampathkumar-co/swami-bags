@@ -5,16 +5,24 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ProductService {
+    private static final Set<String> ALLOWED_CATEGORIES = Set.of(
+            "Cash Bags", "Luggage Bags", "Jute Bags", "Zip Bags", "Purses");
+
     private final ProductRepository repository;
     private final MediaService media;
     private final CatalogExporter exporter;
@@ -43,7 +51,7 @@ public class ProductService {
                 id,
                 slug,
                 clean(request.name()),
-                clean(request.category()),
+                cleanCategory(request.category()),
                 clean(request.material()),
                 request.price() == null ? BigDecimal.ZERO : request.price(),
                 blankTo(request.priceUnit(), "piece"),
@@ -60,22 +68,30 @@ public class ProductService {
 
         try {
             repository.create(product);
-        } catch (DuplicateKeyException e) {
-            throw new IllegalArgumentException("A product with that code or slug already exists.");
+        } catch (DataAccessException databaseError) {
+            if (isUniqueConstraint(databaseError)) {
+                throw new IllegalArgumentException("A product with that code or slug already exists.", databaseError);
+            }
+            throw databaseError;
         }
-        exporter.export();
+        runAfterCommit(exporter::export);
         return get(id);
     }
 
     @Transactional
     public Product update(String id, ProductRequest request) {
         Product current = get(id);
-        String slug = slugify(request.slug() == null || request.slug().isBlank() ? request.name() : request.slug());
+        String slug = request.slug() == null || request.slug().isBlank()
+                ? current.slug()
+                : slugify(request.slug());
+        if (slug.isBlank()) {
+            slug = current.slug();
+        }
         var updated = new Product(
                 current.id(),
                 slug,
                 clean(request.name()),
-                clean(request.category()),
+                cleanCategory(request.category()),
                 clean(request.material()),
                 request.price() == null ? BigDecimal.ZERO : request.price(),
                 blankTo(request.priceUnit(), "piece"),
@@ -89,12 +105,24 @@ public class ProductService {
                 current.images(),
                 current.createdAt(),
                 Instant.now().toString());
+        boolean posterContentChanged =
+                !Objects.equals(current.name(), updated.name())
+                || !Objects.equals(current.category(), updated.category())
+                || !Objects.equals(current.material(), updated.material())
+                || !Objects.equals(current.features(), updated.features());
+
         try {
             repository.update(updated);
-        } catch (DuplicateKeyException e) {
-            throw new IllegalArgumentException("Another product already uses that slug.");
+            if (posterContentChanged) {
+                repository.unapproveMarketingImages(id);
+            }
+        } catch (DataAccessException databaseError) {
+            if (isUniqueConstraint(databaseError)) {
+                throw new IllegalArgumentException("Another product already uses that slug.", databaseError);
+            }
+            throw databaseError;
         }
-        exporter.export();
+        runAfterCommit(exporter::export);
         return get(id);
     }
 
@@ -105,11 +133,11 @@ public class ProductService {
             throw new IllegalArgumentException("Upload at least one real product image before publishing.");
         }
         repository.setPublished(id, published);
-        exporter.export();
+        runAfterCommit(exporter::export);
         return get(id);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<ProductImage> addOriginalImages(String id, List<MultipartFile> files) throws IOException {
         get(id);
         if (files == null || files.isEmpty() || files.size() > 6) {
@@ -125,29 +153,54 @@ public class ProductService {
         int sort = existingImages.stream().filter(ProductImage::isOriginal)
                 .mapToInt(ProductImage::sortOrder).max().orElse(-1) + 1;
 
-        for (MultipartFile file : files) {
-            var stored = media.saveOriginal(id, file);
-            repository.addImage(id, "ORIGINAL", stored.relativePath(), stored.publicUrl(), sort++, false);
+        List<MediaService.StoredMedia> storedFiles = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                var stored = media.saveOriginal(id, file);
+                storedFiles.add(stored);
+                repository.addImage(id, "ORIGINAL", stored.relativePath(), stored.publicUrl(), sort++, false);
+            }
+            repository.unapproveMarketingImages(id);
+            cleanupStoredFilesOnRollback(storedFiles);
+            runAfterCommit(exporter::export);
+            return get(id).images();
+        } catch (IOException | RuntimeException exception) {
+            storedFiles.forEach(media::delete);
+            throw exception;
         }
-        exporter.export();
-        return get(id).images();
     }
 
     @Transactional
     public void removeImage(String id, String imageId) {
-        get(id);
+        Product product = get(id);
         ProductImage image = repository.findImage(id, imageId)
                 .orElseThrow(() -> new IllegalArgumentException("Image not found."));
-        media.delete(image);
+
+        if (product.published() && image.isOriginal()) {
+            long originalCount = product.images().stream().filter(ProductImage::isOriginal).count();
+            if (originalCount <= 1) {
+                throw new IllegalArgumentException("Unpublish the product before deleting its final real product photo.");
+            }
+        }
+
         repository.deleteImage(id, imageId);
-        exporter.export();
+        if (image.isOriginal()) {
+            repository.unapproveMarketingImages(id);
+        }
+        runAfterCommit(() -> {
+            try {
+                exporter.export();
+            } finally {
+                media.delete(image);
+            }
+        });
     }
 
     @Transactional
     public Product approveMarketingImage(String id, String imageId) {
         get(id);
         repository.approveMarketingImage(id, imageId);
-        exporter.export();
+        runAfterCommit(exporter::export);
         return get(id);
     }
 
@@ -155,8 +208,13 @@ public class ProductService {
     public void delete(String id) {
         get(id);
         repository.delete(id);
-        media.deleteProductDirectory(id);
-        exporter.export();
+        runAfterCommit(() -> {
+            try {
+                exporter.export();
+            } finally {
+                media.deleteProductDirectory(id);
+            }
+        });
     }
 
     public Dashboard dashboard(boolean aiConfigured) {
@@ -187,7 +245,14 @@ public class ProductService {
 
     private String normalizeId(String requested) {
         if (requested != null && !requested.isBlank()) {
-            return requested.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9_-]", "-");
+            String normalized = requested.trim()
+                    .toUpperCase(Locale.ROOT)
+                    .replaceAll("[^A-Z0-9_-]+", "-")
+                    .replaceAll("-{2,}", "-")
+                    .replaceAll("^[-_]+|[-_]+$", "");
+            if (!normalized.isBlank()) {
+                return normalized;
+            }
         }
         return "SB-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
     }
@@ -203,11 +268,33 @@ public class ProductService {
                 .replaceAll("(^-|-$)", "");
     }
 
+    private boolean isUniqueConstraint(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null
+                    && (message.contains("SQLITE_CONSTRAINT_UNIQUE")
+                        || message.contains("UNIQUE constraint failed"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
     private String clean(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Required product field is missing.");
         }
         return value.trim();
+    }
+
+    private String cleanCategory(String value) {
+        String category = clean(value);
+        if (!ALLOWED_CATEGORIES.contains(category)) {
+            throw new IllegalArgumentException("Choose a supported product category.");
+        }
+        return category;
     }
 
     private String blankTo(String value, String fallback) {
@@ -224,6 +311,34 @@ public class ProductService {
                 .distinct()
                 .limit(8)
                 .toList();
+    }
+
+    private void cleanupStoredFilesOnRollback(List<MediaService.StoredMedia> storedFiles) {
+        if (storedFiles.isEmpty() || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        List<MediaService.StoredMedia> files = List.copyOf(storedFiles);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != TransactionSynchronization.STATUS_COMMITTED) {
+                    files.forEach(media::delete);
+                }
+            }
+        });
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            action.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
     public record Dashboard(int products, int published, int outOfStock, int images, boolean aiConfigured) {}

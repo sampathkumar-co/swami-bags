@@ -1,22 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { defaultPublicConfig, fallbackProducts } from '../data/products'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { defaultPublicConfig } from '../data/products'
 import type { CatalogProduct, CatalogSnapshot, PublicConfig } from '../types/catalog'
-
-type CatalogContextValue = {
-  products: CatalogProduct[]
-  config: PublicConfig
-  loading: boolean
-  usingFallback: boolean
-  refresh: () => Promise<void>
-}
-
-const CatalogContext = createContext<CatalogContextValue | null>(null)
+import { CatalogContext } from './catalog-context'
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [config, setConfig] = useState<PublicConfig>(defaultPublicConfig)
   const [loading, setLoading] = useState(true)
-  const [usingFallback, setUsingFallback] = useState(false)
 
   const refresh = useCallback(async () => {
     const nonce = Date.now()
@@ -25,26 +15,14 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       fetch(`/catalog/config.json?v=${nonce}`, { cache: 'no-store' }),
     ])
 
-    let catalogLoaded = false
     if (catalogResult.status === 'fulfilled' && catalogResult.value.ok) {
       const snapshot = await catalogResult.value.json() as CatalogSnapshot
       if (snapshot && Array.isArray(snapshot.products)) {
         setProducts(snapshot.products)
-        setUsingFallback(false)
-        catalogLoaded = true
       }
     }
-
-    if (!catalogLoaded) {
-      if (import.meta.env.DEV) {
-        setProducts(fallbackProducts)
-        setUsingFallback(true)
-      } else {
-        // Keep the last successfully loaded catalogue during a transient network/server failure.
-        // On first load this naturally remains an empty array, so production never shows demo inventory.
-        setUsingFallback(false)
-      }
-    }
+    // If the catalogue fetch fails, keep the last successful snapshot in memory.
+    // On first load this naturally stays empty; we never fabricate demo inventory.
 
     if (configResult.status === 'fulfilled' && configResult.value.ok) {
       const publicConfig = await configResult.value.json() as Partial<PublicConfig>
@@ -54,18 +32,18 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    void refresh()
+    let active = true
+    queueMicrotask(() => {
+      if (active) void refresh()
+    })
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    return () => {
+      active = false
+      window.removeEventListener('focus', onFocus)
+    }
   }, [refresh])
 
-  const value = useMemo(() => ({ products, config, loading, usingFallback, refresh }), [products, config, loading, usingFallback, refresh])
+  const value = useMemo(() => ({ products, config, loading, refresh }), [products, config, loading, refresh])
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>
-}
-
-export function useCatalog() {
-  const value = useContext(CatalogContext)
-  if (!value) throw new Error('useCatalog must be used inside CatalogProvider')
-  return value
 }

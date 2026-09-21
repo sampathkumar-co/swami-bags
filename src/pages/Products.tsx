@@ -2,15 +2,14 @@ import { Search, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { useCatalog } from '../context/CatalogContext'
+import { useCatalog } from '../context/catalog-context'
 import { categories } from '../data/products'
 
 export default function Products() {
-  const { products, loading, usingFallback } = useCatalog()
+  const { products, loading } = useCatalog()
   const [params, setParams] = useSearchParams()
-  const initialCategory = params.get('category') ?? 'All'
-  const validInitial = categories.includes(initialCategory as typeof categories[number]) ? initialCategory : 'All'
-  const [category, setCategory] = useState(validInitial)
+  const requestedCategory = params.get('category') ?? 'All'
+  const category = categories.includes(requestedCategory as typeof categories[number]) ? requestedCategory : 'All'
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
@@ -22,7 +21,6 @@ export default function Products() {
   }, [products, category, query])
 
   const changeCategory = (value: string) => {
-    setCategory(value)
     if (value === 'All') setParams({})
     else setParams({ category: value })
   }
@@ -59,7 +57,7 @@ export default function Products() {
 
         <div className="catalogue-summary">
           <span><strong>{filtered.length}</strong> products shown</span>
-          <span>{usingFallback ? 'Demo data · server catalogue not available' : 'Wholesale only · Direct WhatsApp enquiry'}</span>
+          <span>Wholesale only · Direct enquiry</span>
         </div>
 
         {loading ? (

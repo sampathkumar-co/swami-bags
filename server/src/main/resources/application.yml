@@ -33,7 +33,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 40MB
+      max-request-size: 64MB
 
 management:
   endpoints:

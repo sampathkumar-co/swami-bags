@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Menu, MessageCircle, X } from 'lucide-react'
-import { useCatalog } from '../context/CatalogContext'
-import { whatsappUrl } from '../lib/whatsapp'
+import { useCatalog } from '../context/catalog-context'
+import { hasWhatsAppNumber, whatsappUrl } from '../lib/whatsapp'
 
 const navItems = [
   ['Home', '/'],
@@ -14,6 +14,8 @@ const navItems = [
 export default function Layout() {
   const [open, setOpen] = useState(false)
   const { config } = useCatalog()
+  const hasWhatsApp = hasWhatsAppNumber(config.whatsappNumber)
+  const phoneHref = config.businessPhone ? `tel:${config.businessPhone.replace(/[^0-9+]/g, '')}` : ''
   const enquiryHref = whatsappUrl(
     config.whatsappNumber,
     'Hello, I would like to know more about your wholesale bag catalogue.',
@@ -31,7 +33,7 @@ export default function Layout() {
             </span>
           </Link>
 
-          <nav className={open ? 'nav-links is-open' : 'nav-links'} aria-label="Primary navigation">
+          <nav id="primary-navigation" className={open ? 'nav-links is-open' : 'nav-links'} aria-label="Primary navigation">
             {navItems.map(([label, path]) => (
               <NavLink key={path} to={path} onClick={() => setOpen(false)}>
                 {label}
@@ -41,10 +43,16 @@ export default function Layout() {
 
           <a className="btn btn-primary nav-cta" href={enquiryHref}>
             <MessageCircle size={17} />
-            Enquire on WhatsApp
+            {hasWhatsApp ? 'Enquire on WhatsApp' : 'Wholesale enquiry'}
           </a>
 
-          <button className="menu-button" aria-label="Toggle navigation" onClick={() => setOpen((value) => !value)}>
+          <button
+            className="menu-button"
+            aria-label={open ? 'Close navigation' : 'Open navigation'}
+            aria-controls="primary-navigation"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
             {open ? <X /> : <Menu />}
           </button>
         </div>
@@ -64,16 +72,16 @@ export default function Layout() {
                 <small>Wholesale bags for growing businesses</small>
               </span>
             </Link>
-            <p>Simple, reliable wholesale supply across cash bags, luggage, jute bags, zip bags and purses.</p>
+            <p>Wholesale catalogue for cash bags, luggage, jute bags, zip bags and purses.</p>
           </div>
           <div>
-            <h4>Explore</h4>
+            <h2 className="footer-heading">Explore</h2>
             <Link to="/products">Catalogue</Link>
             <Link to="/about">About us</Link>
             <Link to="/contact">Wholesale enquiry</Link>
           </div>
           <div>
-            <h4>Categories</h4>
+            <h2 className="footer-heading">Categories</h2>
             <span>Cash Bags</span>
             <span>Luggage Bags</span>
             <span>Jute Bags</span>
@@ -81,15 +89,15 @@ export default function Layout() {
             <span>Purses</span>
           </div>
           <div>
-            <h4>Wholesale enquiries</h4>
-            <a href={enquiryHref}>WhatsApp us</a>
-            {config.businessPhone && <span>{config.businessPhone}</span>}
+            <h2 className="footer-heading">Wholesale enquiries</h2>
+            <a href={enquiryHref}>{hasWhatsApp ? 'WhatsApp us' : 'Contact us'}</a>
+            {config.businessPhone && <a href={phoneHref}>{config.businessPhone}</a>}
             <span>Bulk orders welcome</span>
           </div>
         </div>
         <div className="container footer-bottom">
           <span>© {new Date().getFullYear()} {config.brandName || 'New Chandra Bags'}</span>
-          <span>Quality · Trust · Long-term partnerships</span>
+          <span>Wholesale · MOQ · Direct enquiries</span>
         </div>
       </footer>
     </div>

@@ -1,2 +1,5 @@
-
-[executed on device: - (6a77f010-efdf-4141-b2db-4f728f99509b)]
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="New Chandra Bags">
+  <rect width="64" height="64" rx="14" fill="#6f1732"/>
+  <path d="M16 45V19h6l13 17V19h7v26h-6L23 28v17z" fill="#fffaf3"/>
+  <path d="M48 19c-7.9 0-14 5.7-14 13s6.1 13 14 13c2.8 0 5.3-.7 7.5-2v-7c-2 1.7-4.3 2.6-6.9 2.6-4.3 0-7.3-2.7-7.3-6.6s3-6.6 7.3-6.6c2.6 0 4.9.9 6.9 2.6v-7A14.4 14.4 0 0 0 48 19z" fill="#e6cfae"/>
+</svg>

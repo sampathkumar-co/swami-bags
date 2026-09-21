@@ -1,9 +1,11 @@
 import { Boxes, ExternalLink, LayoutDashboard, LogOut, Plus, Settings } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useCatalog } from '../context/catalog-context'
 import { adminApi } from '../lib/adminApi'
 
 export default function AdminLayout() {
   const navigate = useNavigate()
+  const { config } = useCatalog()
 
   const logout = async () => {
     try {
@@ -17,8 +19,8 @@ export default function AdminLayout() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link className="admin-brand" to="/admin">
-          <span className="brand-mark">NC</span>
-          <span><strong>New Chandra Bags</strong><small>Catalogue admin</small></span>
+          <span className="brand-mark">{config.logoUrl ? <img src={config.logoUrl} alt="" /> : 'NC'}</span>
+          <span><strong>{config.brandName || 'New Chandra Bags'}</strong><small>Catalogue admin</small></span>
         </Link>
 
         <nav>

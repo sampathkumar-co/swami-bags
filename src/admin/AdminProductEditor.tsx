@@ -78,7 +78,13 @@ export default function AdminProductEditor() {
     }
   }, [id])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    let active = true
+    queueMicrotask(() => {
+      if (active) void load()
+    })
+    return () => { active = false }
+  }, [load])
 
   useEffect(() => {
     let active = true
@@ -97,9 +103,9 @@ export default function AdminProductEditor() {
     material: form.material.trim(),
     price: Math.max(0, Number(form.price) || 0),
     priceUnit: form.priceUnit.trim() || 'piece',
-    moq: Math.max(1, Number(form.moq) || 1),
-    stock: Math.max(0, Number(form.stock) || 0),
-    restockDays: form.restockDays.trim() ? Math.max(0, Number(form.restockDays) || 0) : null,
+    moq: Math.max(1, Math.floor(Number(form.moq) || 1)),
+    stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
+    restockDays: form.restockDays.trim() ? Math.max(0, Math.floor(Number(form.restockDays) || 0)) : null,
     size: form.size.trim(),
     description: form.description.trim(),
     features: form.features.split('\n').map((item) => item.trim()).filter(Boolean),
@@ -118,9 +124,13 @@ export default function AdminProductEditor() {
         const created = await adminApi.createProduct(payload)
         navigate(`/admin/products/${encodeURIComponent(created.id)}`, { replace: true })
       } else if (id) {
+        const hadApprovedMarketing = product?.images.some((image) => image.kind === 'MARKETING' && image.approved) ?? false
         const updated = await adminApi.updateProduct(id, payload)
         setProduct(updated)
-        setMessage('Product details saved.')
+        const stillApproved = updated.images.some((image) => image.kind === 'MARKETING' && image.approved)
+        setMessage(hadApprovedMarketing && !stillApproved
+          ? 'Product details saved. The previous marketing image was unapproved because visible poster details changed.'
+          : 'Product details saved.')
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to save product.')
@@ -257,7 +267,7 @@ export default function AdminProductEditor() {
           <div className="admin-panel-head"><div><h2>Product details</h2><p>Information shown to wholesale buyers.</p></div></div>
 
           <div className="admin-form-grid">
-            <label className="span-2"><span>Product name *</span><input required value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="Premium Methi Bag" /></label>
+            <label className="span-2"><span>Product name *</span><input required value={form.name} onChange={(e) => update('name', e.target.value)} placeholder="Premium Travel Bag" /></label>
             <label><span>Product code</span><input disabled={!isNew} value={form.id} onChange={(e) => update('id', e.target.value)} placeholder="Auto-generated if empty" /></label>
             <label>
               <span>Category *</span>
@@ -265,15 +275,15 @@ export default function AdminProductEditor() {
                 {productCategories.map((category) => <option key={category}>{category}</option>)}
               </select>
             </label>
-            <label className="span-2"><span>Material *</span><input required value={form.material} onChange={(e) => update('material', e.target.value)} placeholder="Methi + 3D fabric" /></label>
+            <label className="span-2"><span>Material *</span><input required value={form.material} onChange={(e) => update('material', e.target.value)} placeholder="Polyester, jute, canvas, PU leather…" /></label>
             <label><span>Wholesale price ₹</span><input type="number" min="0" step="0.01" value={form.price} onChange={(e) => update('price', e.target.value)} /></label>
             <label><span>Price unit</span><input value={form.priceUnit} onChange={(e) => update('priceUnit', e.target.value)} placeholder="piece" /></label>
-            <label><span>MOQ</span><input type="number" min="1" value={form.moq} onChange={(e) => update('moq', e.target.value)} /></label>
-            <label><span>Available quantity</span><input type="number" min="0" value={form.stock} onChange={(e) => update('stock', e.target.value)} /></label>
-            <label><span>Restock days</span><input type="number" min="0" value={form.restockDays} onChange={(e) => update('restockDays', e.target.value)} placeholder="Only needed when stock is 0" /></label>
+            <label><span>MOQ</span><input type="number" min="1" step="1" value={form.moq} onChange={(e) => update('moq', e.target.value)} /></label>
+            <label><span>Available quantity</span><input type="number" min="0" step="1" value={form.stock} onChange={(e) => update('stock', e.target.value)} /></label>
+            <label><span>Restock days</span><input type="number" min="0" step="1" value={form.restockDays} onChange={(e) => update('restockDays', e.target.value)} placeholder="Useful when stock is below MOQ" /></label>
             <label><span>Size</span><input value={form.size} onChange={(e) => update('size', e.target.value)} placeholder="14 × 10 × 5 in" /></label>
             <label className="span-2"><span>Description</span><textarea rows={4} value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Short wholesale-focused product description." /></label>
-            <label className="span-2"><span>Features — one per line</span><textarea rows={5} value={form.features} onChange={(e) => update('features', e.target.value)} placeholder={'Double zipper\nExtra storage\nStrong handles\nCustom printing'} /></label>
+            <label className="span-2"><span>Features — one per line</span><textarea rows={5} value={form.features} onChange={(e) => update('features', e.target.value)} placeholder={'Double zipper\nExtra storage\nShoulder strap\nInner pocket'} /></label>
           </div>
 
           <div className="admin-form-actions">
@@ -288,12 +298,23 @@ export default function AdminProductEditor() {
         {!isNew && id && (
           <div className="admin-editor-side">
             <section className="admin-panel">
-              <div className="admin-panel-head"><div><h2>Real product photos</h2><p>Upload up to 6 JPEG, PNG or WebP reference photos. When AI is configured, a marketing draft is generated automatically after upload.</p></div></div>
-              <label className="admin-upload-zone">
+              <div className="admin-panel-head"><div><h2>Real product photos</h2><p>Upload up to 6 JPEG or PNG reference photos. When AI is configured, a marketing draft is generated automatically after upload.</p></div><span className="admin-photo-count">{originals.length}/6</span></div>
+              <label className={originals.length >= 6 ? 'admin-upload-zone disabled' : 'admin-upload-zone'}>
                 {busy === 'upload' ? <LoaderCircle className="spin" /> : <Upload />}
-                <strong>{busy === 'upload' ? 'Uploading…' : 'Upload product photos'}</strong>
-                <span>Good lighting and multiple angles improve AI fidelity.</span>
-                <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => void upload(event.target.files)} disabled={!!busy} />
+                <strong>{busy === 'upload' ? 'Uploading…' : originals.length >= 6 ? 'Maximum 6 photos reached' : 'Upload product photos'}</strong>
+                <span>{originals.length >= 6 ? 'Delete a photo before adding another.' : 'Good lighting and multiple angles improve AI fidelity.'}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  multiple
+                  onChange={(event) => {
+                    const input = event.currentTarget
+                    const files = input.files
+                    void upload(files)
+                    input.value = ''
+                  }}
+                  disabled={!!busy || originals.length >= 6}
+                />
               </label>
 
               <div className="admin-image-grid">
@@ -312,7 +333,12 @@ export default function AdminProductEditor() {
                 <div><h2>AI marketing image</h2><p>Product fidelity first; verified text is overlaid by the server.</p></div>
                 <Sparkles size={20} />
               </div>
-              <button className="btn btn-primary btn-full" type="button" onClick={() => void generate()} disabled={!!busy || originals.length === 0}>
+              {!aiConfigured && (
+                <div className="admin-inline-empty">
+                  <Sparkles size={20} /> AI generation is unavailable until OPENAI_API_KEY is configured on the server.
+                </div>
+              )}
+              <button className="btn btn-primary btn-full" type="button" onClick={() => void generate()} disabled={!!busy || originals.length === 0 || !aiConfigured}>
                 {busy === 'ai' ? <LoaderCircle className="spin" size={17} /> : <Sparkles size={17} />}
                 {busy === 'ai' ? 'Generating marketing image…' : marketing.length ? 'Regenerate marketing image' : 'Generate marketing image'}
               </button>

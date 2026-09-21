@@ -1,22 +1,22 @@
 import { ArrowRight, Boxes, MessageCircle, PackageCheck, ShieldCheck, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { useCatalog } from '../context/CatalogContext'
-import { fallbackProducts } from '../data/products'
-import { whatsappUrl } from '../lib/whatsapp'
+import { useCatalog } from '../context/catalog-context'
+import { hasWhatsAppNumber, whatsappUrl } from '../lib/whatsapp'
 
 const categoryVisuals = [
-  ['Cash Bags', 'Secure · Durable · Reliable'],
-  ['Luggage Bags', 'Travel ready · Built strong'],
-  ['Jute Bags', 'Natural · Reusable · Brandable'],
-  ['Zip Bags', 'Simple · Versatile · Practical'],
-  ['Purses', 'Stylish · Functional · Wholesale'],
+  ['Cash Bags', 'Wholesale cash bag range'],
+  ['Luggage Bags', 'Wholesale luggage range'],
+  ['Jute Bags', 'Wholesale jute bag range'],
+  ['Zip Bags', 'Wholesale zip bag range'],
+  ['Purses', 'Wholesale purse range'],
 ]
 
 export default function Home() {
-  const { products, config, loading, usingFallback } = useCatalog()
+  const { products, config, loading } = useCatalog()
   const featured = products.slice(0, 4)
-  const visualProducts = products.length ? products : (usingFallback ? fallbackProducts : [])
+  const visualProducts = products
+  const hasWhatsApp = hasWhatsAppNumber(config.whatsappNumber)
   const enquiryHref = whatsappUrl(
     config.whatsappNumber,
     'Hello, I would like to enquire about your wholesale bag range.',
@@ -27,9 +27,9 @@ export default function Home() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <span className="kicker">Wholesale bags · Pan India supply</span>
-            <h1>Quality bags for <em>growing businesses.</em></h1>
-            <p>Reliable wholesale supply across cash bags, luggage, jute bags, zip bags and purses — with practical pricing and clear stock information.</p>
+            <span className="kicker">Wholesale bags · Direct enquiries</span>
+            <h1>Wholesale bags for <em>growing businesses.</em></h1>
+            <p>Browse cash bags, luggage, jute bags, zip bags and purses with material, MOQ, pricing and current stock information shown clearly.</p>
             <div className="hero-actions">
               <Link className="btn btn-primary btn-large" to="/products">
                 View catalogue <ArrowRight size={18} />
@@ -42,7 +42,7 @@ export default function Home() {
             <div className="hero-mini-stats">
               <div><strong>5</strong><span>Product categories</span></div>
               <div><strong>Bulk</strong><span>Wholesale focused</span></div>
-              <div><strong>Pan India</strong><span>Supply network</span></div>
+              <div><strong>Direct</strong><span>Buyer enquiries</span></div>
             </div>
           </div>
 
@@ -51,7 +51,7 @@ export default function Home() {
               {visualProducts[2]?.image
                 ? <img src={visualProducts[2].image} alt="Jute wholesale bag" />
                 : <div className="product-placeholder">Real product image will appear here</div>}
-              <span>Better materials.<br />Brighter business.</span>
+              <span>Wholesale bags.<br />Clear catalogue.</span>
             </div>
             <div className="hero-card hero-card-top">
               {visualProducts[1]?.image
@@ -70,10 +70,10 @@ export default function Home() {
 
       <section className="trust-strip">
         <div className="container trust-grid">
-          <div><ShieldCheck /><span><strong>Trusted quality</strong><small>Built for repeat orders</small></span></div>
+          <div><ShieldCheck /><span><strong>Clear details</strong><small>Material, MOQ & pricing</small></span></div>
           <div><Boxes /><span><strong>Bulk supply</strong><small>Wholesale quantities</small></span></div>
-          <div><PackageCheck /><span><strong>Ready stock</strong><small>Clear availability</small></span></div>
-          <div><Truck /><span><strong>Pan India</strong><small>Reliable dispatch</small></span></div>
+          <div><PackageCheck /><span><strong>Stock visibility</strong><small>Clear availability</small></span></div>
+          <div><Truck /><span><strong>Supply enquiry</strong><small>Confirm dispatch directly</small></span></div>
         </div>
       </section>
 
@@ -88,8 +88,8 @@ export default function Home() {
             <Link className="text-link" to="/products">View all products <ArrowRight size={16} /></Link>
           </div>
           <div className="category-grid">
-            {categoryVisuals.map(([name, subtitle], index) => {
-              const sample = products.find((item) => item.category === name) ?? (usingFallback ? fallbackProducts[index] : undefined)
+            {categoryVisuals.map(([name, subtitle]) => {
+              const sample = products.find((item) => item.category === name)
               return (
                 <Link key={name} to={`/products?category=${encodeURIComponent(name)}`} className="category-card">
                   <div className="category-image">
@@ -113,7 +113,6 @@ export default function Home() {
             <div>
               <span className="kicker">Popular wholesale choices</span>
               <h2>Featured products</h2>
-              {usingFallback && <p>Demo catalogue shown until the server catalogue is published.</p>}
             </div>
             <Link className="text-link" to="/products">Full catalogue <ArrowRight size={16} /></Link>
           </div>
@@ -142,13 +141,13 @@ export default function Home() {
               : <div className="product-placeholder">Real New Chandra Bags product photography will appear here.</div>}
           </div>
           <div className="story-copy">
-            <span className="kicker">Built on trust</span>
+            <span className="kicker">Wholesale made clear</span>
             <h2>Simple wholesale. Clear information. Better business.</h2>
             <p>{config.brandName || 'New Chandra Bags'} is designed around how wholesale buyers actually shop: they need the material, price, minimum order quantity, current stock and restock time without digging through clutter.</p>
             <div className="story-stats">
-              <div><strong>5+</strong><span>Core categories</span></div>
+              <div><strong>5</strong><span>Core categories</span></div>
               <div><strong>100%</strong><span>Wholesale focused</span></div>
-              <div><strong>Fast</strong><span>WhatsApp enquiry</span></div>
+              <div><strong>Direct</strong><span>{hasWhatsApp ? 'WhatsApp enquiry' : 'Wholesale enquiry'}</span></div>
             </div>
             <Link className="btn btn-primary" to="/about">Our story <ArrowRight size={17} /></Link>
           </div>
@@ -160,7 +159,7 @@ export default function Home() {
           <div>
             <span className="kicker kicker-light">Wholesale orders welcome</span>
             <h2>Need pricing for a larger quantity?</h2>
-            <p>Send the product and quantity directly on WhatsApp. No cart, no checkout, no unnecessary steps.</p>
+            <p>{hasWhatsApp ? 'Send the product and quantity directly on WhatsApp.' : 'Send the product and quantity through the enquiry page.'} No cart, no checkout, no unnecessary steps.</p>
           </div>
           <a className="btn btn-light btn-large" href={enquiryHref}>
             <MessageCircle size={18} />

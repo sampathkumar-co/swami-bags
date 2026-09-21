@@ -1,5 +1,6 @@
 import { Check, ImagePlus, KeyRound, LoaderCircle, Save, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useCatalog } from '../context/catalog-context'
 import { adminApi } from '../lib/adminApi'
 import type { SiteSettings } from './types'
 
@@ -14,6 +15,7 @@ const emptySettings: SiteSettings = {
 }
 
 export default function AdminSettings() {
+  const { refresh: refreshPublicConfig } = useCatalog()
   const [form, setForm] = useState<SiteSettings>(emptySettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -51,6 +53,7 @@ export default function AdminSettings() {
     try {
       const saved = await adminApi.updateSettings(form)
       setForm(saved)
+      await refreshPublicConfig()
       setMessage('Business details saved and the public website configuration was refreshed.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to save business settings.')
@@ -67,6 +70,7 @@ export default function AdminSettings() {
     try {
       const saved = await adminApi.uploadLogo(file)
       setForm(saved)
+      await refreshPublicConfig()
       setMessage('Business logo uploaded and published to the website.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to upload the logo.')
@@ -82,6 +86,7 @@ export default function AdminSettings() {
     try {
       const saved = await adminApi.deleteLogo()
       setForm(saved)
+      await refreshPublicConfig()
       setMessage('Business logo removed. The NC fallback mark is active.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to remove the logo.')
@@ -103,11 +108,13 @@ export default function AdminSettings() {
     }
     setPasswordBusy(true)
     try {
-      await adminApi.changePassword(currentPassword, newPassword)
+      const result = await adminApi.changePassword(currentPassword, newPassword)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setMessage('Admin password changed successfully. The new password will continue to work after server restarts.')
+      setMessage(result.otherSessionsRevoked
+        ? 'Admin password changed successfully. Other signed-in admin sessions were revoked.'
+        : 'Admin password changed successfully.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Unable to change the admin password.')
     } finally {

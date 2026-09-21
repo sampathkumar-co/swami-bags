@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +43,21 @@ public class MarketingImageService {
         this.properties = properties;
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void markInterruptedGenerationsFailed() {
+        jdbc.update("""
+                UPDATE ai_generations
+                SET status = 'FAILED',
+                    result_image_id = NULL,
+                    error_message = CASE
+                        WHEN error_message IS NULL OR error_message = ''
+                        THEN 'Generation was interrupted before completion.'
+                        ELSE error_message
+                    END
+                WHERE status = 'RUNNING'
+                """);
+    }
+
     public ProductImage generate(String productId) {
         Product product = repository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found."));
@@ -51,17 +69,28 @@ public class MarketingImageService {
         String prompt = buildPrompt(product);
         String generationId = UUID.randomUUID().toString();
         String createdAt = Instant.now().toString();
-        jdbc.update("""
-                INSERT INTO ai_generations (id, product_id, model, status, prompt, created_at)
-                VALUES (?, ?, ?, 'RUNNING', ?, ?)
-                """, generationId, productId, properties.openAiImageModel(), prompt, createdAt);
+        try {
+            jdbc.update("""
+                    INSERT INTO ai_generations (id, product_id, model, status, prompt, created_at)
+                    VALUES (?, ?, ?, 'RUNNING', ?, ?)
+                    """, generationId, productId, properties.openAiImageModel(), prompt, createdAt);
+        } catch (DataAccessException databaseError) {
+            if (isRunningGenerationConstraint(databaseError)) {
+                throw new IllegalArgumentException(
+                        "A marketing image is already being generated for this product. Wait for it to finish before retrying.",
+                        databaseError);
+            }
+            throw databaseError;
+        }
 
+        MediaService.StoredMedia stored = null;
+        ProductImage image = null;
         try {
             List<Path> referencePaths = originals.stream().map(media::resolve).toList();
             byte[] generated = openAi.edit(referencePaths, prompt);
             byte[] finalPoster = poster.compose(generated, product);
-            var stored = media.saveMarketing(productId, finalPoster);
-            ProductImage image = repository.addImage(productId, "MARKETING",
+            stored = media.saveMarketing(productId, finalPoster);
+            image = repository.addImage(productId, "MARKETING",
                     stored.relativePath(), stored.publicUrl(), 0, false);
             jdbc.update("""
                     UPDATE ai_generations
@@ -71,8 +100,31 @@ public class MarketingImageService {
             exporter.export();
             return image;
         } catch (RuntimeException | java.io.IOException e) {
+            if (image != null) {
+                try {
+                    repository.deleteImage(productId, image.imageId());
+                } catch (RuntimeException cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                }
+            }
+            if (stored != null) {
+                try {
+                    media.delete(stored);
+                } catch (RuntimeException cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                }
+            }
+            if (image != null) {
+                try {
+                    exporter.export();
+                } catch (RuntimeException cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                }
+            }
             jdbc.update("""
-                    UPDATE ai_generations SET status = 'FAILED', error_message = ? WHERE id = ?
+                    UPDATE ai_generations
+                    SET status = 'FAILED', result_image_id = NULL, error_message = ?
+                    WHERE id = ?
                     """, truncate(e.getMessage(), 1000), generationId);
             if (e instanceof RuntimeException runtime) {
                 throw runtime;
@@ -98,6 +150,20 @@ public class MarketingImageService {
                         rs.getString("error_message"),
                         rs.getString("created_at")),
                 productId, productId);
+    }
+
+    private boolean isRunningGenerationConstraint(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null
+                    && (message.contains("SQLITE_CONSTRAINT_UNIQUE")
+                        || message.contains("UNIQUE constraint failed: ai_generations.product_id"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private String buildPrompt(Product product) {

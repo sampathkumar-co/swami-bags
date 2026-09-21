@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
@@ -91,27 +92,48 @@ public class MediaService {
         Path directory = mediaRoot.resolve("brand").normalize();
         Files.createDirectories(directory);
         SharedFilePermissions.makeDirectoryPublicReadable(directory);
-        Files.deleteIfExists(safeResolve(directory, "logo.jpg"));
-        Files.deleteIfExists(safeResolve(directory, "logo.png"));
 
-        Path target = safeResolve(directory, "logo" + decoded.extension());
-        boolean written = ImageIO.write(decoded.image(), decoded.format(), target.toFile());
-        if (!written) {
-            Files.deleteIfExists(target);
-            throw new IllegalArgumentException("The logo image could not be safely stored.");
+        Path target = safeResolve(directory, "logo-" + UUID.randomUUID() + decoded.extension());
+        Path temp = Files.createTempFile(directory, "logo-", decoded.extension() + ".tmp");
+        try {
+            boolean written = ImageIO.write(decoded.image(), decoded.format(), temp.toFile());
+            if (!written) {
+                throw new IllegalArgumentException("The logo image could not be safely stored.");
+            }
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
+                Files.move(temp, target);
+            }
+            SharedFilePermissions.makeFilePublicReadable(target);
+            return stored(target);
+        } finally {
+            Files.deleteIfExists(temp);
         }
-        SharedFilePermissions.makeFilePublicReadable(target);
-        return stored(target);
     }
 
     public void deleteBrandLogo() {
         Path directory = mediaRoot.resolve("brand").normalize();
-        try {
-            Files.deleteIfExists(safeResolve(directory, "logo.jpg"));
-            Files.deleteIfExists(safeResolve(directory, "logo.png"));
+        if (!Files.exists(directory)) {
+            return;
+        }
+        try (var stream = Files.list(directory)) {
+            stream.filter(Files::isRegularFile).forEach(this::deletePath);
         } catch (IOException ignored) {
             // Best effort removal; the public config is still cleared.
         }
+    }
+
+    public void deletePublicMediaUrl(String publicUrl) {
+        if (publicUrl == null || publicUrl.isBlank() || !publicUrl.startsWith("/media/")) {
+            return;
+        }
+        Path relative = Path.of(publicUrl.substring(1)).normalize();
+        Path resolved = dataDir.resolve(relative).normalize();
+        if (!resolved.startsWith(mediaRoot)) {
+            throw new IllegalArgumentException("Invalid media URL.");
+        }
+        deletePath(resolved);
     }
 
     public Path resolve(ProductImage image) {
@@ -123,10 +145,22 @@ public class MediaService {
     }
 
     public void delete(ProductImage image) {
+        deletePath(resolve(image));
+    }
+
+    public void delete(StoredMedia stored) {
+        Path resolved = dataDir.resolve(stored.relativePath()).normalize();
+        if (!resolved.startsWith(mediaRoot)) {
+            throw new IllegalArgumentException("Invalid media path.");
+        }
+        deletePath(resolved);
+    }
+
+    private void deletePath(Path path) {
         try {
-            Files.deleteIfExists(resolve(image));
+            Files.deleteIfExists(path);
         } catch (IOException ignored) {
-            // Database deletion should not be blocked by an already-missing file.
+            // Database cleanup should not be blocked by an already-missing file.
         }
     }
 
