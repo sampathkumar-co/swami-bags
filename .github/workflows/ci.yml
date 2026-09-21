@@ -277,7 +277,7 @@ jobs:
             -H "Content-Type: application/json" \
             -X PUT \
             --data '{
-              "brandName":"Swami Bags CI",
+              "brandName":"New Chandra Bags CI",
               "whatsappNumber":"919876543210",
               "businessPhone":"+91 98765 43210",
               "businessEmail":"sales@example.com",
@@ -286,12 +286,41 @@ jobs:
             }' \
             "$base/api/admin/settings" > /tmp/settings.json
 
-          grep -q '"brandName":"Swami Bags CI"' /tmp/settings.json
+          grep -q '"brandName":"New Chandra Bags CI"' /tmp/settings.json
           curl -fsS "$base/catalog/config.json" > /tmp/public-config.json
-          grep -q '"brandName":"Swami Bags CI"' /tmp/public-config.json
+          grep -q '"brandName":"New Chandra Bags CI"' /tmp/public-config.json
           grep -q '"whatsappNumber":"919876543210"' /tmp/public-config.json
           curl -fsS "$base/sitemap.xml" > /tmp/sitemap.xml
           grep -q 'https://example.com/products/ci-smoke-bag' /tmp/sitemap.xml
+
+      - name: Verify logo replacement lifecycle
+        run: |
+          set -euo pipefail
+          base="http://127.0.0.1:8088"
+          cookies="/tmp/swami-cookies.txt"
+
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+
+          curl -fsS -c "$cookies" -b "$cookies"             -H "X-XSRF-TOKEN: $csrf"             -F "file=@/tmp/bag.png;type=image/png"             "$base/api/admin/settings/logo" > /tmp/logo-one.json
+          logo_one="$(python3 -c 'import json; print(json.load(open("/tmp/logo-one.json"))["logoUrl"])')"
+          [[ "$logo_one" == /media/brand/logo-*.png ]]
+          curl -fsS "$base$logo_one" -o /tmp/logo-one.png
+          test -s /tmp/logo-one.png
+
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+          curl -fsS -c "$cookies" -b "$cookies"             -H "X-XSRF-TOKEN: $csrf"             -F "file=@/tmp/bag.png;type=image/png"             "$base/api/admin/settings/logo" > /tmp/logo-two.json
+          logo_two="$(python3 -c 'import json; print(json.load(open("/tmp/logo-two.json"))["logoUrl"])')"
+          [[ "$logo_two" == /media/brand/logo-*.png ]]
+          test "$logo_two" != "$logo_one"
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$base$logo_one")" = "404"
+
+          csrf_json="$(curl -fsS -c "$cookies" -b "$cookies" "$base/api/admin/auth/csrf")"
+          csrf="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])' <<< "$csrf_json")"
+          curl -fsS -c "$cookies" -b "$cookies"             -H "X-XSRF-TOKEN: $csrf"             -X DELETE             "$base/api/admin/settings/logo" > /tmp/logo-delete.json
+          grep -q '"logoUrl":""' /tmp/logo-delete.json
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "$base$logo_two")" = "404"
 
       - name: Verify backup and restore operations
         run: |
@@ -314,7 +343,7 @@ jobs:
 
           grep -q '"CI Smoke Bag"' /tmp/catalog-after-restore.json
           curl -fsS "$base/catalog/config.json" > /tmp/config-after-restore.json
-          grep -q '"brandName":"Swami Bags CI"' /tmp/config-after-restore.json
+          grep -q '"brandName":"New Chandra Bags CI"' /tmp/config-after-restore.json
 
       - name: Verify public catalogue stays available without the API
         run: |
